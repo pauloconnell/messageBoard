@@ -19,7 +19,8 @@ module.exports = function (app) {
   
   app.route('/api/threads/:board').get((req,res)=>{
     
-    
+    // hit db to get all entries for :board
+    // return entries
   }).put((req,res)=>{
     
   }).post((req,res)=>{
@@ -45,4 +46,18 @@ module.exports = function (app) {
     
   });;
 
+  
+
+//Sample front-end
+app.route('/b/:board/')
+  .get(function (req, res) {
+    res.sendFile(process.cwd() + '/views/board.html');
+  
+  
+  });
+app.route('/b/:board/:threadid')
+  .get(function (req, res) {
+    res.sendFile(process.cwd() + '/views/thread.html');
+  });
+  
 };
