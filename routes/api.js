@@ -23,7 +23,9 @@ mongoose.connect(process.env.DB_URI, {
 mongoose.set("useFindAndModify", false);
   
   // set up schema/model
- var replySchema = new mongoose.Schema({
+  // threads are board topics, which hold their own replies
+
+    var replySchema = new mongoose.Schema({
     text: {type: String, required:true},
     created_on: {type: Date, default: new Date(), required:true},
     reported: {type:Boolean, default: false},
@@ -38,7 +40,8 @@ mongoose.set("useFindAndModify", false);
     reported: {type:Boolean, default: false, required:true},
     delete_password: {type: String, required:true},
     replies: [replySchema]
-  })
+  });
+
 
 const Thread = mongoose.model("Thread", threadSchema);
 
@@ -74,6 +77,7 @@ var isNewThread=(thread)=>{
         console.log("error reading thread DB", err);
       }else{
         if(!data){
+           console.log("Thread is new ");
           return true;
         }
         else{
@@ -85,15 +89,19 @@ var isNewThread=(thread)=>{
 }
   
   
-  
+  app.route('/api').get((req,res)=>{
+    
+  })
   
   app.route('/api/threads/:board').get((req,res)=>{
-    let {board} =req.params;
+    let {test} =req.params;
+    let board=req.body.board;
     console.log("api/threads board is ",board);
+    res.redirect(`/b/{board}`);
+    
     // hit db to get all entries for :board
-    let boardData=findDoc(board);
-      console.log(boardData);
-    res.json(boardData);
+    //let boardData=findDoc(board);
+    
     
     // return entries
     
@@ -106,13 +114,14 @@ var isNewThread=(thread)=>{
   // save    model.save
   // now we have board
   //mongo will add _id on save
-   res.redirect('/b/{board}')  
+   res.redirect(`/b/{board}`);  
     
   }).delete((req,res)=>{
     
   });
     
   app.route('/api/replies/:board').get((req,res)=>{
+    //hit db to get replies for :board
     
   }).put((req,res)=>{
     
@@ -131,7 +140,22 @@ app.route('/b/:board/')
     res.sendFile(process.cwd() + '/views/board.html');
   
   
-  });
+  })
+  .post(function (req, res){
+  var {text, reported, delete_password, replies}=req.body;
+  var board=req.params;
+  if(isNewThread(board)){
+    try{
+      let newThread= new Thread(req.body);
+      }catch{
+        console.log("error saving new thread to DB /b/:board")
+        return res.send("error saving board to DB");
+      }
+  }
+  
+  res.sendFile(process.cwd() + '/views/board.html');
+});
+  
 app.route('/b/:board/:threadid')
   .get(function (req, res) {
     res.sendFile(process.cwd() + '/views/thread.html');
