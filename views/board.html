@@ -23,9 +23,9 @@
       </form>
     </div>
     
-    <div id='boardDisplay'></div>
+    <div id="boardDisplay"></div>
     
-    <hr style='margin: 50px; margin-top: 200px'>
+    <hr style="margin: 50px; margin-top: 200px">
     
     <script src="https://code.jquery.com/jquery-2.2.1.min.js"
             integrity="sha256-gvQgAFzTH6trSrAWoH1iPo9Xc96QxSZ3feW6kem+O00="
@@ -34,7 +34,7 @@
       $(function() {
         var currentBoard = window.location.pathname.slice(3,-1);    // this is key!!! get the name of the board based on the path
         var url = "/api/threads/"+currentBoard;
-        $('#boardTitle').text('Welcome to '+window.location.pathname)  // this board is pathname from API call
+        $('#boardTitle').text('Welcome to Board'+window.location.pathname)  // this board is pathname from API call
         $.ajax({
           type: "GET",
           url: url,

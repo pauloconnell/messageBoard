@@ -19,31 +19,21 @@ app.use(cors({origin: '*'})); //For FCC testing purposes only
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
  // Helmet middleware.
-    app.use(helmet());//{
-//       contentSecurityPolicy: {
-//         directives: {
-//           defaultSrc: ["'self'"],
-//           scriptSrc: ["'self'", "localhost", "*.jquery.com", "'unsafe-inline'"],
-          
-//           styleSrc: ["'self'", "localhost", "'unsafe-inline'"]
-//         }}}
-   // ));
+app.use(helmet());
+// add referrerPolicy ( not present by default)
+app.use(
+  helmet.referrerPolicy({
+    policy: ["origin"]
+  })
+);
 
-//Sample front-end
-app.route('/b/:board/')
-  .get(function (req, res) {
-    res.sendFile(process.cwd() + '/views/board.html');
-  });
-app.route('/b/:board/:threadid')
-  .get(function (req, res) {
-    res.sendFile(process.cwd() + '/views/thread.html');
-  });
 
 //Index page (static HTML)
 app.route('/')
   .get(function (req, res) {
     res.sendFile(process.cwd() + '/views/index.html');
   });
+
 
 //For FCC testing purposes
 fccTestingRoutes(app);
