@@ -64,28 +64,40 @@ console.log("readyState codes are:   0: disconnected      1: connected  2: conne
     )
   }
 // check if thread exists before calling saveThread
-var saveThread=(thread)=>{   // delete this - will save all boards together
+// defined below
+ //var saveThread=(thread)=>{   // delete this - will save all boards together
     
-   thread.save(); 
-};
+//   thread.save(); 
+//};
   
-var isNewThread=(thread)=>{
-  Thread.findOne({
-    board: thread.name
+var isExistingThread=async(thread)=>{
+  console.log("inside isExistingThread with ",thread);
+  await Thread.findOne({
+    board: thread.board
     },(err,data)=>{
       if(err){
         console.log("error reading thread DB", err);
       }else{
         if(!data){
-           console.log("Thread is new ");
-          return true;
+           console.log("api 82 Thread is new ");
+          return false;
         }
         else{
-          console.log("Thread already exists, adding to replies");
-          return false;      
+          console.log("Thread already exists, Sending doc");
+          return data;      
         }
       }
   })    
+}
+
+var saveThread=async(Thread)=>{
+  console.log("saving thread ", Thread);
+  try{
+    await Thread.save();
+  }catch(err){
+    console.log("error saving thread ", Thread, err);
+  }
+  return true;
 }
   
   
@@ -96,7 +108,7 @@ var isNewThread=(thread)=>{
   app.route('/api/threads/:board').get((req,res)=>{
     let {test} =req.params;
     let board=req.body.board;
-    console.log("api/threads board is ",board);
+    console.log("api/threads board GET is ",board);
     res.redirect(`/b/{board}`);
     
     // hit db to get all entries for :board
@@ -108,20 +120,53 @@ var isNewThread=(thread)=>{
     
   }).put((req,res)=>{
     
-  }).post((req,res)=>{
-    var {text, reported, delete_password, replies}=req.body;
-   // create schema
-  // save    model.save
+  }).post(async (req,res)=>{
+    //var {text, reported, delete_password, replies}=req.body;
+      var {board, text, delete_password } = req.body;
+    console.log("/api/threads/:board  POST recieved: ", req.body);// board,text, password only?
+    var board=req.body.board; 
+    // check for existing board:
+    let isExisting=await isExistingThread(req.body);//returns false or doc if exists
+    let thisThread;
+  // save if new, or load data into 'thisThread' if existing
+    if(!isExisting){
+      thisThread = await new Thread(req.body);
+      let saved=await saveThread(thisThread);// essentially load up _id
+      console.log("saved status is ",saved);
+    }else{
+      thisThread=isExisting; // if existing board, it's data will be sent back with _id
+    }  
   // now we have board
   //mongo will add _id on save
-   res.redirect(`/b/{board}`);  
+   console.log("api 141 redirect with thisThread : ", thisThread);
+   res.redirect('/b/'+thisThread.board+"/"+thisThread._id);  //(`/b/{board}`);  
     
   }).delete((req,res)=>{
     
   });
     
   app.route('/api/replies/:board').get((req,res)=>{
+    let board=req.params;
+    let thread_id=req.query;
+    console.log("GET replies/:board recieved from front end - id? ", req.query, req.params);
     //hit db to get replies for :board
+    let thisBoard = Thread.find(board,{},{lean: true});
+    if (thisBoard.replies){
+      return res.send(thisBoard);
+    }else {
+      
+      //let path=window.location.pathname;
+      // var currentURL = window.location.pathname.slice(3);
+      //  currentURL = currentURL.split('/');
+      console.log("No replies here so ", thisBoard._id);
+      thread_id.replies=[0];
+      thread_id._id=thread_id.thread_id;
+      console.log("sending ",thread_id);
+      return res.json(req.query);  // send empty replies to allow page to load
+    }
+      
+    
+
     
   }).put((req,res)=>{
     
@@ -144,7 +189,7 @@ app.route('/b/:board/')
   .post(function (req, res){
   var {text, reported, delete_password, replies}=req.body;
   var board=req.params;
-  if(isNewThread(board)){
+  if(isExistingThread(board)){
     try{
       let newThread= new Thread(req.body);
       }catch{
@@ -158,6 +203,7 @@ app.route('/b/:board/')
   
 app.route('/b/:board/:threadid')
   .get(function (req, res) {
+  
     res.sendFile(process.cwd() + '/views/thread.html');
   });
   

@@ -11,13 +11,13 @@
   </head>
   <body>
     <header>
-      <h1 id='threadTitle'></h1>
+      <h1 id="threadTitle"></h1>
     </header>
     <br>
     
-    <div id='boardDisplay'></div>
+    <div id="boardDisplay"></div>
     
-    <hr style='margin: 50px; margin-top: 200px'>
+    <hr style="margin: 50px; margin-top: 200px">
     <!-- Your web-app is https, so your scripts need to be too -->
     <script src="https://code.jquery.com/jquery-2.2.1.min.js"
             integrity="sha256-gvQgAFzTH6trSrAWoH1iPo9Xc96QxSZ3feW6kem+O00="
@@ -26,9 +26,9 @@
       $(function() {
         var currentURL = window.location.pathname.slice(3);
         currentURL = currentURL.split('/');
-        
+        console.log("inside thread.htm get url currentURL is ", currentURL);
         var url = "/api/replies/"+currentURL[0];
-        $('#threadTitle').text(window.location.pathname);
+        $('#threadTitle').text("welcome to Thread.html! "+ window.location.pathname);
         $.ajax({
           type: "GET",
           url: url,
@@ -40,7 +40,7 @@
             // THIS ARRAY SET UP IS FOR CODE READABILITIES AND TESTING!
             // THIS IS NOT WHAT IT WOULD LOOK LIKE TO GO LIVE
             //
-              console.log(ele);//can I use typeScript please?!
+              console.log("returned object from /api/replies/board is ",ele);//can I use typeScript please?!
               var thread = ['<div class="thread">'];
               thread.push('<div class="main">')
               thread.push('<p class="id">id: '+ele._id+' ('+ele.created_on+')</p>');
