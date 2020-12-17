@@ -145,24 +145,26 @@ var saveThread=async(Thread)=>{
     
   });
     
-  app.route('/api/replies/:board').get((req,res)=>{
+  app.route('/api/replies/:board').get(async(req,res)=>{
     let board=req.params;
     let thread_id=req.query;
     console.log("GET replies/:board recieved from front end - id? ", req.query, req.params);
     //hit db to get replies for :board
-    let thisBoard = Thread.find(board,{},{lean: true});
-    if (thisBoard.replies){
-      return res.send(thisBoard);
+    let thisBoard = await Thread.find(board,{},{lean: true});
+    console.log( "api/replies/:board results of board on DB: ",thisBoard);
+    if (thisBoard[0].replies){
+      return res.send(thisBoard[0]);
     }else {
       
       //let path=window.location.pathname;
       // var currentURL = window.location.pathname.slice(3);
       //  currentURL = currentURL.split('/');
-      console.log("No replies here so ", thisBoard._id);
-      thread_id.replies=[0];
-      thread_id._id=thread_id.thread_id;
-      console.log("sending ",thread_id);
-      return res.json(req.query);  // send empty replies to allow page to load
+    
+    console.log("No replies here so ", thisBoard._id);
+      thread_id.replies=[0];          // add replies value
+      thread_id._id=thread_id.thread_id;  // add _id
+      console.log("sending ",thread_id, thisBoard);
+      return res.json(thisBoard);  // send empty replies to allow page to load
     }
       
     
