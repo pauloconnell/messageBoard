@@ -72,8 +72,9 @@ console.log("readyState codes are:   0: disconnected      1: connected  2: conne
   
 var isExistingThread=async(thread)=>{
   console.log("inside isExistingThread with ",thread);
-  await Thread.findOne({
-    board: thread.board
+  await Thread.find({
+    board: thread.board,
+    text: thread.text
     },(err,data)=>{
       if(err){
         console.log("error reading thread DB", err);
@@ -83,8 +84,8 @@ var isExistingThread=async(thread)=>{
           return false;
         }
         else{
-          console.log("Thread already exists, Sending doc");
-          return data;      
+          console.log("Thread already exists, doc: ", data);
+          return data;                             
         }
       }
   })    
@@ -148,33 +149,47 @@ var saveThread=async(Thread)=>{
   app.route('/api/replies/:board').get(async(req,res)=>{
     let board=req.params;
     let thread_id=req.query;
+
     console.log("GET replies/:board recieved from front end - id? ", req.query, req.params);
+     let _id=await mongoose.Types.ObjectId(thread_id.thread_id);    // convert JSON sent in into _id
     //hit db to get replies for :board
-    let thisBoard = await Thread.find(board,{},{lean: true});
-    console.log( "api/replies/:board results of board on DB: ",thisBoard);
-    if (thisBoard[0].replies){
-      return res.send(thisBoard[0]);
-    }else {
-      
-      //let path=window.location.pathname;
-      // var currentURL = window.location.pathname.slice(3);
-      //  currentURL = currentURL.split('/');
+   
+    let thisBoard = await Thread.findById({_id});//,{},{lean: true});
+    console.log( "api/replies/:board results of board on DB: ", thisBoard);
     
-    console.log("No replies here so ", thisBoard._id);
-      thread_id.replies=[0];          // add replies value
-      thread_id._id=thread_id.thread_id;  // add _id
-      console.log("sending ",thread_id, thisBoard);
-      return res.json(thisBoard);  // send empty replies to allow page to load
-    }
-      
+   // for(var i=0; i<thisBoard.length; i++){
+      //if (thisBoard.replies){
+        return res.send(thisBoard);  // replies will exist, even if none present, so this will always execute
+      //}else {
+
+        //let path=window.location.pathname;
+        // var currentURL = window.location.pathname.slice(3);
+        //  currentURL = currentURL.split('/');
+
+//       console.log("No replies here so ", thisBoard._id);
+//         thread_id.replies=[0];          // add replies value
+//         thread_id._id=thread_id.thread_id;  // add _id
+//         console.log("sending ",thread_id, thisBoard);
+//         return res.json(thisBoard);  // send empty replies to allow page to load
+   
+    //  }
+   // }
     
 
     
   }).put((req,res)=>{
     
-  }).post((req,res)=>{
-    
-    
+  }).post(async(req,res)=>{
+    console.log("inside POST @ api/replies/board ", req.body, req.body.thread_id);
+    let _id=mongoose.Types.ObjectId(req.body.thread_id);    // convert JSON sent in into _id
+    let text=req.body.text;
+    console.log(" configuring replies to save to db ", text);
+    let newReply=new Reply(req.body);
+    let saveReply= await Thread.findOne(_id);//,  { $push: { replies: newReply} });
+    saveReply.replies.push(newReply);
+    await saveReply.save();
+    console.log(saveReply)
+     res.sendFile(process.cwd() +'/views/thread.html');
   }).delete((req,res)=>{
     
   });;
