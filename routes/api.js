@@ -84,7 +84,7 @@ var isExistingThread=async(thread)=>{
           return false;
         }
         else{
-          console.log("Thread already exists, doc: ", data);
+          console.log("Thread already exists, doc: ", JSON.stringify(data));
           return data;                             
         }
       }
@@ -96,7 +96,7 @@ var saveThread=async(Thread)=>{
   try{
     await Thread.save();
   }catch(err){
-    console.log("error saving thread ", Thread, err);
+    console.log("error saving thread ", err, Thread );
   }
   return true;
 }
@@ -183,7 +183,7 @@ var saveThread=async(Thread)=>{
     console.log("inside POST @ api/replies/board ", req.body, req.body.thread_id);
     let _id=mongoose.Types.ObjectId(req.body.thread_id);    // convert JSON sent in into _id
     let text=req.body.text;
-    console.log(" configuring replies to save to db ", text);
+    console.log(" configuring replies to save to db. Reply Text is:", text);
     let newReply=new Reply(req.body);
     let saveReply= await Thread.findOne(_id);//,  { $push: { replies: newReply} });
     saveReply.replies.push(newReply);

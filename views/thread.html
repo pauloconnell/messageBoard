@@ -22,11 +22,13 @@
     <script src="https://code.jquery.com/jquery-2.2.1.min.js"
             integrity="sha256-gvQgAFzTH6trSrAWoH1iPo9Xc96QxSZ3feW6kem+O00="
             crossorigin="anonymous"></script>
-    <script>
+    <script defer>
+      // when I call this page from api/replies/:board, it is taking window.location to be api, not thread.html???
       $(function() {
         var currentURL = window.location.pathname.slice(3);
-        currentURL = currentURL.split('/');
+      
         console.log("inside thread.htm get url currentURL is ", currentURL);
+          currentURL = currentURL.split('/');
         var url = "/api/replies/"+currentURL[0];
         $('#threadTitle').text("welcome to Thread.html! "+ window.location.pathname);
         $.ajax({
