@@ -70,28 +70,30 @@ console.log("readyState codes are:   0: disconnected      1: connected  2: conne
 //   thread.save(); 
 //};
   
-var isExistingThread=async(thread)=>{
+var isExistingThread=async(thread, done)=>{
   console.log("inside isExistingThread with ",thread);
   await Thread.find({
     board: thread.board,
-    text: thread.text
+    text: thread.text,
+    delete_password: thread.delete_password
     },(err,data)=>{
       if(err){
         console.log("error reading thread DB", err);
+        return err;
       }else{
-        if(!data){
+        console.log("recieved from mongodb : ", data)
+        if(data.length==0){
            console.log("api 82 Thread is new ");
-          return false;
-        }
-        else{
-          console.log("Thread already exists, doc: ", JSON.stringify(data));
-          return data;                             
+          return done(false);
+        }else{
+          console.log("Thread already exists, doc: ", typeof(data), data._id, JSON.stringify(data));
+          done(data);                             
         }
       }
   })    
 }
 
-var saveThread=async(Thread)=>{
+var saveThread=async(Thread, done)=>{
   console.log("saving thread ", Thread);
   try{
     await Thread.save();
@@ -103,8 +105,8 @@ var saveThread=async(Thread)=>{
   
   
   app.route('/api').get((req,res)=>{
-    
-  })
+    res.sendFile(process.cwd() + '/views/index.html');
+  });
   
   app.route('/api/threads/:board').get((req,res)=>{
     let {test} =req.params;
@@ -127,8 +129,12 @@ var saveThread=async(Thread)=>{
     console.log("/api/threads/:board  POST recieved: ", req.body);// board,text, password only?
     var board=req.body.board; 
     // check for existing board:
-    let isExisting=await isExistingThread(req.body);//returns false or doc if exists
-    let thisThread;
+    let isExisting;
+    await isExistingThread(req.body, function(result){
+      isExisting=result;  
+    });//returns false or doc if exists
+    let thisThread=null;
+    console.log("is existing should be null or contain doc ", isExisting);
   // save if new, or load data into 'thisThread' if existing
     if(!isExisting){
       thisThread = await new Thread(req.body);
@@ -185,11 +191,11 @@ var saveThread=async(Thread)=>{
     let text=req.body.text;
     console.log(" configuring replies to save to db. Reply Text is:", text);
     let newReply=new Reply(req.body);
-    let saveReply= await Thread.findOne(_id);//,  { $push: { replies: newReply} });
-    saveReply.replies.push(newReply);
-    await saveReply.save();
-    console.log(saveReply)
-     res.sendFile(process.cwd() +'/views/thread.html');
+    let savedReply= await Thread.findOne(_id);//,  { $push: { replies: newReply} });
+    savedReply.replies.push(newReply);
+    await savedReply.save();
+    console.log("saved the reply to DB: ", savedReply.board,savedReply)
+     res.redirect('/b/'+savedReply.board+'/'+savedReply._id); //+'/views/thread.html');
   }).delete((req,res)=>{
     
   });;
