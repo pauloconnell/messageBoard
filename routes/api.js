@@ -57,16 +57,20 @@ console.log("readyState codes are:   0: disconnected      1: connected  2: conne
   
   
   
- var findDoc=(board, done)=>{
+ var findDoc=async(board, done)=>{
 
-    Thread.findOne(
-      {board: board}, (err, data)=>{
-        if(err) console.log("error reading DB");
+    await Thread.find(
+      board, (err, data)=>{
+        if(err) console.log("findDoc error reading DB ", board);
         if(data){
           if(data.replies){
             return done(null, data);
           }
-        }
+        }else{
+          console.log("checking to see if this is sent back");
+            data="no Replies yet";
+            return done(null, null);
+       }
       }
     )
   }
@@ -161,6 +165,7 @@ var saveThread=async(Thread, done)=>{
         if(err) console.log("err saving to db 148", err);
         else{
           saved=true;  // saved will now containg _id
+          return saved;
           }
       });// essentially load up _id
       console.log("saved status is ",saved);
@@ -180,36 +185,37 @@ var saveThread=async(Thread, done)=>{
     let board=req.params;
     let thread_id=req.query;
 
-    console.log("GET replies/:board recieved from front end - id? ", req.query, req.params);
+    console.log("GET replies/:board recieved from front end - id? ", thread_id, board);
      let _id=await mongoose.Types.ObjectId(thread_id.thread_id);    // convert JSON sent in into _id
     //hit db to get replies for :board
-    
-    let thisBoard;
-    await findDoc(board, function(err, doc){
+    console.log("_id created as ", _id);
+    let thisBoard = await findDoc(board, function(err, doc){
       if(err) console.log("errror reading from db 164 ", err);
       if(doc){
-        let thisBoard=doc;  
-      }
+        thisBoard=doc;  
+        return thisBoard
+      }else return (null, "no DOC found")
     });
  //   let thisBoard = await Thread.findById({_id});//,{},{lean: true});
     console.log( "api/replies/:board results of board on DB: ", thisBoard);
     
    // for(var i=0; i<thisBoard.length; i++){
-      //if (thisBoard.replies){
+      if (thisBoard){
         return res.send(thisBoard);  // replies will exist, even if none present, so this will always execute
-      //}else {
+      }else {
 
         //let path=window.location.pathname;
         // var currentURL = window.location.pathname.slice(3);
         //  currentURL = currentURL.split('/');
 
-//       console.log("No replies here so ", thisBoard._id);
-//         thread_id.replies=[0];          // add replies value
-//         thread_id._id=thread_id.thread_id;  // add _id
-//         console.log("sending ",thread_id, thisBoard);
-//         return res.json(thisBoard);  // send empty replies to allow page to load
+       console.log("No replies here  ", thisBoard);
+        let returnObject={};
+        returnObject._id=_id;  // add replies value to send back(stop error if no replies)
+        returnObject.replies=[0];
+        console.log("sending ",_id, thisBoard);
+        return res.json(returnObject);  // send empty replies to allow page to load
    
-    //  }
+      }
    // }
     
 
@@ -271,7 +277,7 @@ app.route('/b/:board/')
   
 app.route('/b/:board/:threadid')
   .get(function (req, res) {
-  
+    
     res.sendFile(process.cwd() + '/views/thread.html');
   });
   

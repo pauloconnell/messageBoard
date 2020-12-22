@@ -29,7 +29,7 @@
       
         console.log("inside thread.htm get url currentURL is ", currentURL);//
           currentURL = currentURL.split('/');
-        var url = "/api/replies/"+currentURL[0]+"/"+currentURL[1];
+        var url = "/api/replies/"+currentURL[0];  //+"/"+currentURL[1]; this is sent as data below
         $('#threadTitle').text("welcome to Thread.html! "+ window.location.pathname);
         $.ajax({
           type: "GET",
