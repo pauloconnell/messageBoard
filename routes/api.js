@@ -59,6 +59,7 @@ console.log("readyState codes are:   0: disconnected      1: connected  2: conne
   
  var findDoc=async(board, done)=>{  // note: this will still work for board= board or board = _id
 
+   console.log("about to look up ",board);
     await Thread.find(
       board, (err, data)=>{
         if(err) console.log("findDoc error reading DB ", board);
@@ -66,7 +67,7 @@ console.log("readyState codes are:   0: disconnected      1: connected  2: conne
           if(data.replies){
             return done(null, data);
           }else{
-            console.log("no replies but have file ", data);
+            console.log("no replies but have file ", data.toString());
             return done(null, data);
           }
         }else{
@@ -143,15 +144,25 @@ var saveThread=async(Thread, done)=>{
     res.sendFile(process.cwd() + '/views/index.html');
   });
   
-  app.route('/api/threads/:board').get((req,res)=>{
-    let {test} =req.params;
-    let board=req.body.board;
-    console.log("api/threads board GET is ",board, test);
-    res.redirect(`/b/{board}`);
+  app.route('/api/threads/:board').get(async(req,res)=>{
+    let board =req.params;
+    
+    console.log("api/threads board GET is ",board);
+    //res.redirect(`/b/{board}`);
     
     // hit db to get all entries for :board
-    //let boardData=findDoc(board);
-    
+    let boardData=await findDoc(board, function(err, data){
+      if (err) console.log(err);
+      if( data){
+        console.log("got data 155", data);
+        return (null, data);
+      }else{
+        console.log("should never see this");
+        return (null, null)
+      }
+    });
+    console.log(boardData);
+    res.json(boardData);
     
     // return entries
     
@@ -207,7 +218,7 @@ var saveThread=async(Thread, done)=>{
     //hit db to get replies for :board
     console.log("_id converted ", _id);
     let thisBoard ; 
-    await findDoc(_id, function(err, doc){
+    await findDoc(board, function(err, doc){
       if(err) console.log("errror reading from db 164 ", err);
       if(doc){
        // thisBoard=doc;  
