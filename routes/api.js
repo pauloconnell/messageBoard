@@ -57,13 +57,16 @@ console.log("readyState codes are:   0: disconnected      1: connected  2: conne
   
   
   
- var findDoc=async(board, done)=>{
+ var findDoc=async(board, done)=>{  // note: this will still work for board= board or board = _id
 
     await Thread.find(
       board, (err, data)=>{
         if(err) console.log("findDoc error reading DB ", board);
         if(data){
           if(data.replies){
+            return done(null, data);
+          }else{
+            console.log("no replies but have file ", data);
             return done(null, data);
           }
         }else{
@@ -92,7 +95,7 @@ var isExistingThread=async(thread, done)=>{
            console.log("api 82 Thread is new ");
           return done(null, false);
         }else{
-          console.log("Thread already exists, doc: ", typeof(data), data._id, JSON.stringify(data));
+          console.log("Thread already exists, doc: ", typeof(data), data[0]._id, JSON.stringify(data));
           return done(null, data);                             
         }
       }
@@ -118,7 +121,23 @@ var saveThread=async(Thread, done)=>{
    }
 //   return true;
  }
-  
+//    var findReplies=async(id, done)=>{
+
+//     await Thread.find(
+//       id, (err, data)=>{
+//         if(err) console.log("findDoc error reading DB ", id);
+//         if(data){
+//           if(data.replies){
+//             return done(null, data);
+//           }
+//         }else{
+//           console.log("checking to see if this is sent back");
+//             data="no Replies yet";
+//             return done(null, null);
+//        }
+//       }
+//     )
+//   }
   
   app.route('/api').get((req,res)=>{
     res.sendFile(process.cwd() + '/views/index.html');
@@ -127,7 +146,7 @@ var saveThread=async(Thread, done)=>{
   app.route('/api/threads/:board').get((req,res)=>{
     let {test} =req.params;
     let board=req.body.board;
-    console.log("api/threads board GET is ",board);
+    console.log("api/threads board GET is ",board, test);
     res.redirect(`/b/{board}`);
     
     // hit db to get all entries for :board
@@ -159,13 +178,11 @@ var saveThread=async(Thread, done)=>{
     if(!isExisting){
       thisThread = await new Thread(req.body);
       console.log("about to save ",thisThread);
-      let saved;
-      
-      await saveThread(thisThread, function(err, doc){
-        if(err) console.log("err saving to db 148", err);
+      let saved = await saveThread(thisThread, function(err, doc){
+        if(err) console.log("err saving to db 181", err);
         else{
           saved=true;  // saved will now containg _id
-          return saved;
+          return (null, true)
           }
       });// essentially load up _id
       console.log("saved status is ",saved);
@@ -174,7 +191,7 @@ var saveThread=async(Thread, done)=>{
     }  
   // now we have board
   //mongo will add _id on save
-   console.log("api 171 redirect with thisThread : ", thisThread);
+   console.log("api 191 redirect with thisThread : ", thisThread);
    res.redirect('/b/'+thisThread.board+"/"+thisThread._id);  //(`/b/{board}`);  
     
   }).delete((req,res)=>{
@@ -188,12 +205,15 @@ var saveThread=async(Thread, done)=>{
     console.log("GET replies/:board recieved from front end - id? ", thread_id, board);
      let _id=await mongoose.Types.ObjectId(thread_id.thread_id);    // convert JSON sent in into _id
     //hit db to get replies for :board
-    console.log("_id created as ", _id);
-    let thisBoard = await findDoc(board, function(err, doc){
+    console.log("_id converted ", _id);
+    let thisBoard ; 
+    await findDoc(_id, function(err, doc){
       if(err) console.log("errror reading from db 164 ", err);
       if(doc){
-        thisBoard=doc;  
-        return thisBoard
+       // thisBoard=doc;  
+        console.log("recieved in api/replies/:board doc = ", doc);
+        thisBoard=doc;
+        //return doc;
       }else return (null, "no DOC found")
     });
  //   let thisBoard = await Thread.findById({_id});//,{},{lean: true});
@@ -201,7 +221,14 @@ var saveThread=async(Thread, done)=>{
     
    // for(var i=0; i<thisBoard.length; i++){
       if (thisBoard){
-        return res.send(thisBoard);  // replies will exist, even if none present, so this will always execute
+//         if (!thisBoard.replies){
+          
+//             let fakeReply =new Reply({text:"No Replies Yet", delete_password:"a"});
+//           console.log("adding reply to avoid html error ", fakeReply);
+//           thisBoard[0].replies.push(fakeReply);  // needed to avoid error in required html
+//           }
+        console.log("sending result ",thisBoard ); 
+        return res.send(thisBoard); 
       }else {
 
         //let path=window.location.pathname;
@@ -209,11 +236,14 @@ var saveThread=async(Thread, done)=>{
         //  currentURL = currentURL.split('/');
 
        console.log("No replies here  ", thisBoard);
+        
         let returnObject={};
         returnObject._id=_id;  // add replies value to send back(stop error if no replies)
-        returnObject.replies=[0];
-        console.log("sending ",_id, thisBoard);
-        return res.json(returnObject);  // send empty replies to allow page to load
+        returnObject.replies=[null];
+        returnObject.board=board.board;
+        let loadedReturnObject= new Reply(returnObject)
+        console.log(loadedReturnObject,"sent ",_id, thisBoard, );
+        return res.json(loadedReturnObject);  // send empty replies to allow page to load
    
       }
    // }
