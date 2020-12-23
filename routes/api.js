@@ -63,7 +63,7 @@ console.log("readyState codes are:   0: disconnected      1: connected  2: conne
 
    console.log("about to look up ",board);
     await Thread.find(
-      board, (err, data)=>{
+      {board:board}, (err, data)=>{
         if(err) console.log("findDoc error reading DB ", board);
         if(data){
           //if(data.replies){
@@ -107,7 +107,16 @@ console.log("readyState codes are:   0: disconnected      1: connected  2: conne
 var isExistingThread=async(thread, done)=>{
   
   // next: first check for board, false or get_id and check for thread
+  // this function is likely redundant
+  // next: eliminate this function by just calling findBOard() and findThread() directly?
   
+  await findBoard(thread.board, (err,doc)=>{
+    if(err) console.log(" error looking up board on db ",err);
+    if(doc){
+      console.log("found board ",doc);
+      return (null, true);
+    }
+  });
   console.log("inside isExistingThread with ",thread);
   await Thread.find({
     board: thread.board,
@@ -202,15 +211,17 @@ var saveThread=async(Thread, done)=>{
     //var {text, reported, delete_password, replies}=req.body;
       var {board, text, delete_password } = req.body;
     console.log("/api/threads/:board  POST recieved: ", req.body, req.params);// board,text, password only?
+    var gotPost={};
+    gotPost=req.body;
     if(!req.body.board){
       if(req.params){
-        req.body.board=req.params; 
+        gotPost.board=req.params.board; 
       }
     }
-    console.log("going to look up ",req.body);
+    console.log("going to look up ",gotPost);
     // check for existing board:
     let isExisting;
-    await isExistingThread(req.body, function(err,result){
+    await isExistingThread(gotPost, function(err,result){
       if(err) console.log("err reading from DB api 206", err);
       else{ 
         isExisting=result;  
