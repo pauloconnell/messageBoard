@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>Welcome to HyperDev!</title>
-    <meta name="description" content="A cool thing made with HyperDev">
+    <title>Welcome to Message Board @Thread.html!</title>
+    <meta name="description" content="Message board">
     <link id="favicon" rel="icon" href="https://hyperdev.com/favicon-app.ico" type="image/x-icon">
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -30,7 +30,7 @@
         console.log("inside thread.htm get url currentURL is ", currentURL);//
           currentURL = currentURL.split('/');
         var url = "/api/replies/"+currentURL[0];  //+"/"+currentURL[1]; this is sent as data below
-        $('#threadTitle').text("welcome to Thread.html! "+ window.location.pathname);
+        $('#threadTitle').text(currentURL[0]+"Welcome to Thread.html! "+ window.location.pathname);
         $.ajax({
           type: "GET",
           url: url,
