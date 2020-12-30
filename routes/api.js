@@ -4,7 +4,7 @@
 // helper functions to handle database calls
 //findBoard(board, done) - looks up board, returns false if no data or calls done with data of all threads on this board
 //findThread(id, done)  - looks up Thread by ID returns thread
-//findReplies(id, done)    // next line 303 clean up with findReplies NEXT
+//saveReplies(replyWithThread_IdIncluded, done)    - saves reply to Thread
 //isExistingThread(board, done)
 //saveThread(thread, done)
 // NOTE: no saveBoard, as a 'board' is simply a bunch of different Threads with the same 'board' name
@@ -41,6 +41,7 @@ module.exports = function(app) {
     bumped_on: { type: Date, required: false },
     reported: { type: Boolean, default: false, required: true },
     delete_password: { type: String, required: true },
+    replycount:Number,
     replies: [replySchema]
   });
 
@@ -84,6 +85,8 @@ module.exports = function(app) {
   };
 
   // check if thread exists before calling saveThread
+  // delete this
+  // NON GOAL - not going to worry about double threads
   var isExistingThread = async (thread, done) => {
     // next: first check for board, false or get_id and check for thread
     var found_id;
@@ -116,33 +119,41 @@ module.exports = function(app) {
   };
 
   var saveThread = async (thread, done) => {
-    console.log("saving thread ");
-    //thread = new Thread(thread);  // convert data to Thread (adds _id)
+    console.log("In saveThread, saving thread ", thread);
+    let threadSaved = new Thread(thread);  // convert data to Thread (adds _id)
+    console.log("thread is now :", threadSaved);
     try {
-      await thread.save(done);
+      threadSaved.save(done);
     } catch (err) {
       console.log("error saving thread ", err, Thread);
       done(err);
     }
     //   return true;
   };
-  //    var findReplies=async(id, done)=>{
-
-  //     await Thread.find(
-  //       id, (err, data)=>{
-  //         if(err) console.log("findDoc error reading DB ", id);
-  //         if(data){
-  //           if(data.replies){
-  //             return done(null, data);
-  //           }
-  //         }else{
-  //           console.log("checking to see if this is sent back");
-  //             data="no Replies yet";
-  //             return done(null, null);
-  //        }
-  //       }
-  //     )
-  //   }
+  
+  // function to find replies
+  var saveReply=async(reply, done)=>{
+      console.log("inside saveReply with ", reply);
+      // prep reply to be converted to schema:
+      let threadId=reply.thread_id;  // as per reply format passed in 
+      delete reply._id;  // to allow new _id for this reply
+      let newReply = new Reply(reply)
+      await Thread.findById(
+        threadId, (err, data)=>{
+          if(err) console.log("findDoc error reading DB ", threadId);
+          if(data){
+            console.log("data on this thread is ", data);
+            data.replies.push(newReply);
+            data.save();
+            return done(null, data);
+          }else{
+            console.log("checking to see if this is sent back");
+              data="no Replies yet";
+              return done(null, null);
+         }
+        }
+      )
+    }
 
   app.route("/api").get((req, res) => {
     res.sendFile(process.cwd() + "/views/index.html");
@@ -162,17 +173,25 @@ module.exports = function(app) {
       await findBoard(board, function(err, data) {
         if (err) console.log(err);
         if (data) {
-          console.log("got data ", data);
-          boardData = data;
-        } else {
+          console.log("got data, about to send ", typeof data, data);
+         // data.forEach((data)=>{
+        //    if(data.replies.length>=1){
+        //      data.replycount=data.replies.length;
+        //      boardData = data;
+        //      data.save();
+        //    }  
+       //   });
+          res.json(data);
+          
+          } else {
           console.log(
             "should never see this because board will be saved and returned from findBoard"
           );
           // return null;
         }
       });
-      console.log("boardData is :", boardData[0]);
-      res.json(boardData);
+//      console.log("boardData will not be defined here yet :", boardData[0]);
+      //res.json(boardData);
 
       // return entries
     })
@@ -195,20 +214,22 @@ module.exports = function(app) {
       let threadFound;
       // no need to find board, just save Thread
       let thisThread = null;
-      var saved;
-      thisThread = await new Thread(req.body); // prep for save/add _id ect
-      console.log("about to save ", thisThread);
-      await saveThread(thisThread, function(err, doc) {
+      var saved=false;
+// do this in saveThread to save time in Server      thisThread = await new Thread(req.body); // prep for save/add _id ect
+      console.log("about to save ", req.body);
+      await saveThread(req.body, function(err, doc) {
         if (err) console.log("err saving to db ", err);
         if (doc) {
           saved = true; // saved will now containg _id
-          console.log("saveThread returned doc, ", doc);
+          console.log("saveThread returned doc, ", doc.board, doc);
+          
+          res.redirect("/b/"+doc.board+"/");
         }
-      });
-      console.log("saved ", JSON.stringify(thisThread));
+      });//.then();
+      console.log("Note: awaiting saved, but this executes first so saved? ", saved);
       // now we have board and _id
-      console.log(" redirect with thisThread id : ", thisThread._id);
-      res.redirect("/b/" + thisThread.board + "/" + thisThread._id); //(`/b/{board}`);
+      console.log(" will redirect  thisThread to GET b/board ");
+     // res.redirect("/b/" + thisThread.board);// redirect to board showing all replies instead of just this thread => + "/" + thisThread._id); //(`/b/{board}`);
     })
     .delete((req, res) => {});
 
@@ -235,8 +256,8 @@ module.exports = function(app) {
           console.log("recieved in api/replies/:board doc = ", doc);
           thisBoard = doc;
           //return doc;
-        } else return null, "no DOC found";
-      });
+        } else return (null, "no DOC found");
+      })
       console.log("api/replies/:board results of board on DB: ", thisBoard);
 
       if (thisBoard) {
@@ -253,6 +274,7 @@ module.exports = function(app) {
           res.json(thisBoard);
         }
       }
+    
     })
     .put((req, res) => {})
     .post(async (req, res) => {
@@ -266,12 +288,21 @@ module.exports = function(app) {
       let _id = req.body.thread_id; //mongoose.Types.ObjectId(req.body.thread_id); // convert JSON sent in into _id
       let text = req.body.text;
       console.log(" configuring replies to save to db. Reply Text is:", text);
-      let newReply = new Reply(req.body);
-      let savedReply = await Thread.findOne(_id); //,  { $push: { replies: newReply} });
-      savedReply.replies.push(newReply);
-      await savedReply.save();
-      console.log("saved the reply to DB: ", savedReply.board, savedReply);
-      res.redirect("/b/" + savedReply.board + "/" + savedReply._id); //+'/views/thread.html');
+    
+    // need function to be passed reply and thread id, and save reply to thread
+     await saveReply(req.body, (err, doc)=>{
+        if(err) console.log(err);
+        if(doc){
+          console.log("saved the reply to DB: ", doc);
+          res.redirect("/b/" + req.body.board + "/" + _id); //+'/views/thread.html');
+        }
+  })
+   //   let newReply = new Reply(req.body);
+   //   let savedReply = await Thread.findOne(_id); //,  { $push: { replies: newReply} });
+   //   savedReply.replies.push(newReply);
+   //   await savedReply.save();
+   //   console.log("saved the reply to DB: ", savedReply.board, savedReply);
+   //   res.redirect("/b/" + savedReply.board + "/" + savedReply._id); //+'/views/thread.html');
     })
     .delete((req, res) => {});
 
@@ -297,12 +328,13 @@ module.exports = function(app) {
         if (!isExisting) {
           // if NOT existing Thread:
           try {
-            let newThread = new Thread(req.body);
-            saveThread(newThread, function(err, result) {
+            // this is done in saveThread  to save server time : let newThread = new Thread(req.body);
+            saveThread(req.body, function(err, result) {
               if (err) console.log("err saving to db /b/:board ", err);
-              else {
+              if (result) {
                 console.log("Thread saved", result);
-                newThread = result; //this will add _id to Thread
+                //newThread = result; //this will add _id to Thread
+                res.sendFile(process.cwd() + "/views/board.html");              
               }
             });
           } catch {
@@ -311,7 +343,7 @@ module.exports = function(app) {
           }
         }
 
-        res.sendFile(process.cwd() + "/views/board.html");
+// called after async saveThread call        res.sendFile(process.cwd() + "/views/board.html");
       });
     });
 
