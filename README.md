@@ -46,11 +46,18 @@ Project Anon Message Board
 # Design patern here:
 ## Proposed Solution
 	Technical Architecture is apparently intentionally confusing for this application, so a flow chart works best:
-  index.html newThread input form: POST=> api/threads/:board  which saves Thread
-    redirects to b/:board/:id which redirects to:
+  index.html  user inputs newThread  into form: POST=> api/threads/:board  which saves Thread
+    redirects to GET b/:board(NOT WITH /:id so it shows ALL Threads in this board)  which  displays board.html = board with all threads
+    
+    
+    redirects to:
       => thread.html which calls
-        GET => api/replies/:board which looks up _id to retrieve replies on this thread
+        GET => api/replies/:board which  Should just display all the threads in this board
+        calls
+          saveReply(replyWithThreadIdIncluded, done) which returns:
         
+        looks up _id to retrieve replies on this thread
+  thread.html REPLY input from form: POST=> api/threads/reply/:board which
 
 ## Alternative Solutions
 	Pros/Cons of Alternatives - also can we use 3rd party/open source solution?
