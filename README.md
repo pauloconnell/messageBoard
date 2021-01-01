@@ -46,19 +46,34 @@ Project Anon Message Board
 # Design patern here:
 ## Proposed Solution
 	Technical Architecture is apparently intentionally confusing for this application, so a flow chart works best:
-  index.html  user inputs newThread  into form: POST=> api/threads/:board  which saves Thread
-    redirects to GET b/:board(NOT WITH /:id so it shows ALL Threads in this board)  which  displays board.html = board with all threads
+  ```
+  Create new Thread:
+  POST=> api/threads/:board
+  index.html  user inputs newThread  into NEW THREAD form: POST=> api/threads/:board  which saves Thread
+    redirects to GET=> b/:board(NOT WITH /:id so it shows ALL Threads in this board)  which  
+      =>Board.html will GET => api/threads/:board which sends back all threads on this board:(limited to 10 most recient)
+       From here, user can reply to any Thread on this board
+       
+   Create a reply on a Thread:
+   board.html showing all(10 most recient) threads, user replies to any thread:
+     =>POST to api/replies/:board, which calls saveReply(replyWithThreadIdIncluded, done) and redirects to =>b:/:Board/:Id which redirects to=> thread.html
     
-    
-    redirects to:
-      => thread.html which calls
-        GET => api/replies/:board which  Should just display all the threads in this board
-        calls
-          saveReply(replyWithThreadIdIncluded, done) which returns:
-        
+   thread.html calls
+        GET => api/replies/:board which  sorts by date, and return 3 most recient threads in this board - limited to most recient three only
+
+
+EITHER board.html OR thread.html can save a reply to thread
+
         looks up _id to retrieve replies on this thread
   thread.html REPLY input from form: POST=> api/threads/reply/:board which
-
+  
+  NEXT ALL replies should be sent when hit api/replies/board/:_id
+  Must update the web page this sends such that we can hit a different api to send data they want
+  NO - just make this new route work to send back all replies and hide fields like before
+  NEXT - build out new route between ////    and //// above api/replies/in api.js
+  
+  
+```
 ## Alternative Solutions
 	Pros/Cons of Alternatives - also can we use 3rd party/open source solution?
 
