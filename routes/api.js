@@ -1,5 +1,5 @@
-// Design Doc:
-// See ReadMe - this challenge is  confusing as each action creates a chain of API calls and HTML page changes
+// Design Doc: In ReadMe
+// - this challenge is  confusing as each action creates a chain of API calls and HTML page changes
 
 // helper functions to handle database calls
 //findBoard(board, done) - looks up board, returns false if no data or calls done with data of all threads on this board
@@ -38,10 +38,10 @@ module.exports = function(app) {
     text: { type: String, required: true },
     board: { type: String, required: true },
     created_on: { type: Date, default: new Date(), required: true },
-    bumped_on: { type: Date, required: false },
+    bumped_on: { type: Date, required: false, default: new Date()},
     reported: { type: Boolean, default: false, required: true },
     delete_password: { type: String, required: true },
-    replycount:Number,
+    replycount: {type: Number, default: 0},
     replies: [replySchema]
   });
 
@@ -60,11 +60,9 @@ module.exports = function(app) {
   var findBoard = async (board, done) => {
     console.log("FindBoard about to look up ", board, typeof board);
     if (typeof board != "object") {
-      board = { board: board }; // General board links with object, so ensure we have object to look up here
+      board = { board: board };     board = { board: board }; // General board links with object, so ensure we have object to look up here
     }
-
-    //
-    var boardFound = await Thread.find(board, (err, data) => {
+   await Thread.find(board).sort({bumped_on:-1}).exec((err, data) => {
       if (err) console.log("findBoard error reading DB ", board, err);
       if (data.length == 0) {
         console.log(" It should be Impossible, but no board yet for ", board);
@@ -73,15 +71,41 @@ module.exports = function(app) {
       } else {
         console.log("found board", board, JSON.stringify(data));
 
+       // arrange results as per spec 
+           while(data.length>=11){
+             data.pop();
+             console.log("trimming to 10 items ", data.length);
+           }
+          console.log("data now has max 10 items ", data.length );
+          
+          data.forEach((doc)=>{
+            delete data.reported;
+            delete data.delete_password;
+            while(doc.replies.length>=4){
+              doc.replies.shift();  // remove the oldest reply until there are only 3 most receint here
+            }
+            console.log("prepared 10 data with max 3 replies",doc.text, doc.bumped_on, doc.replies);
+              //doc.replies=doc.replies.slice(doc.replies.length-2);
+          });    
+          console.log("now data is max 10 items, with max 3 replies")
+          
+          
+//          I can GET an array of the most recent 10 bumped threads on the board with only the most recent 3 replies from /api/threads/{board}. 
+          //The reported and delete_passwords fields will not be sent.
+       
+        
+        
+        
+        
         return done(null, data);
       }
     });
   };
 
-  var findThread = async (id, done) => {
+  var findThread = (id, done) => {
     // called at 339
     console.log("FindThread about to look up ", id);
-    const threadFound = await Thread.findById(id, done);
+    Thread.findById(id, done);
   };
 
   // check if thread exists before calling saveThread
@@ -119,6 +143,8 @@ module.exports = function(app) {
   };
 
   var saveThread = async (thread, done) => {
+    thread.created_on=new Date();  // update time -otherwise it will default to time when model was instantated
+    thread.bumped_on=new Date();
     console.log("In saveThread, saving thread ", thread);
     let threadSaved = new Thread(thread);  // convert data to Thread (adds _id)
     console.log("thread is now :", threadSaved);
@@ -137,6 +163,7 @@ module.exports = function(app) {
       // prep reply to be converted to schema:
       let threadId=reply.thread_id;  // as per reply format passed in 
       delete reply._id;  // to allow new _id for this reply
+      reply.created_on=new Date();      // update created on date (otherwise it defaults to when Thread was instantated)
       let newReply = new Reply(reply)
       await Thread.findById(
         threadId, (err, data)=>{
@@ -144,6 +171,9 @@ module.exports = function(app) {
           if(data){
             console.log("data on this thread is ", data);
             data.replies.push(newReply);
+            data.replycount++;
+            data.bumped_on= new Date();    // updated bumped on date for this thread
+            console.log("data updated to be ", data);
             data.save();
             return done(null, data);
           }else{
@@ -173,14 +203,28 @@ module.exports = function(app) {
       await findBoard(board, function(err, data) {
         if (err) console.log(err);
         if (data) {
-          console.log("got data, about to send ", typeof data, data);
-         // data.forEach((data)=>{
-        //    if(data.replies.length>=1){
-        //      data.replycount=data.replies.length;
-        //      boardData = data;
-        //      data.save();
-        //    }  
-       //   });
+          console.log("got data, about to send ", typeof data, data.length);
+         // done in findBoard
+          // while(data.length>=10){
+         //   data=data.pop();
+         //   }
+          console.log("data now has max 10 items ", data)
+          
+          data.forEach((doc, index)=>{
+            doc.replies.sort(doc.replies.created_on);
+            delete data.reported;
+            delete data.delete_password;
+            if(doc.replies.length>=3)
+              doc.replies.slice(2);
+          });    
+          console.log("now data is max 10 items, with max 3 replies")
+          
+          
+//          I can GET an array of the most recent 10 bumped threads on the board with only the most recent 3 replies from /api/threads/{board}. 
+          //The reported and delete_passwords fields will not be sent.
+          
+          
+          
           res.json(data);
           
           } else {
@@ -197,7 +241,7 @@ module.exports = function(app) {
     })
     .put((req, res) => {})
     .post(async (req, res) => {
-      // save Thread -which 'adds'&OR Creates thread for board
+      // save Thread -which creates thread for board
       //var {text, reported, delete_password, replies}=req.body;
       var { board, text, delete_password } = req.body;
       console.log("/api/threads/:board  POST recieved: ", req.body, req.params); // board,text, password only?
@@ -210,8 +254,8 @@ module.exports = function(app) {
       }
       console.log("saving thread to  board: ", gotPost.board);
       // check for existing board:
-      let boardFound;
-      let threadFound;
+    // let boardFound;
+    //  let threadFound;
       // no need to find board, just save Thread
       let thisThread = null;
       var saved=false;
@@ -232,7 +276,46 @@ module.exports = function(app) {
      // res.redirect("/b/" + thisThread.board);// redirect to board showing all replies instead of just this thread => + "/" + thisThread._id); //(`/b/{board}`);
     })
     .delete((req, res) => {});
+/////////////////////////////////////////////////
 
+  app
+    .route("/api/replies/:board/:_id")
+    .get(async (req, res) => {
+      //check for replies and return replies or null?
+      let board = req.params;
+      let thread_id = req.query;
+
+      console.log(
+        "GET replies/:board recieved from front end - id? ",
+        thread_id,
+        board
+      );
+      let _id = await mongoose.Types.ObjectId(thread_id.thread_id); // convert JSON sent in into _id NOT NEEDED
+      //hit db to get replies for :board
+      console.log("_id converted ", _id);
+    //  var thisBoard;
+      await findThread(_id, function(err, doc) {
+        if (err) console.log("error reading from db ", err);
+        if (doc) {
+          // thisBoard=doc;
+          console.log("recieved in api/replies/:board doc = ", doc);
+          res.json(doc);
+        } else return (null, "impossible, but no DOC found");
+      })
+    })
+    .put((req, res) => {})
+    .post(async (req, res) => {
+      console.log(
+        "inside POST @ api/ALLreplies/board ",
+        req.body,
+        req.params
+      );
+  });
+  
+  
+  
+  
+  ////////////////////////////////////////////////////////////
   app
     .route("/api/replies/:board")
     .get(async (req, res) => {
@@ -248,32 +331,44 @@ module.exports = function(app) {
       let _id = await mongoose.Types.ObjectId(thread_id.thread_id); // convert JSON sent in into _id NOT NEEDED
       //hit db to get replies for :board
       console.log("_id converted ", _id);
-      var thisBoard;
+    //  var thisBoard;
       await findThread(_id, function(err, doc) {
         if (err) console.log("error reading from db ", err);
         if (doc) {
           // thisBoard=doc;
           console.log("recieved in api/replies/:board doc = ", doc);
-          thisBoard = doc;
-          //return doc;
-        } else return (null, "no DOC found");
+         // thisBoard = doc;
+          // only return the three most recient docs:
+          if(doc.replies.length>=3){
+            doc.replies.sort((a,b)=>{
+              if(a.replies){
+                return (a.replies.bumped_on-b.replies.bumped_on);
+              }else console.log("no replies here" );
+            }
+            );
+             doc.replies=doc.replies.splice(3);
+          }
+          
+          console.log("now our doc is ", doc);
+          res.json(doc);
+        } else return (null, "impossible, but no DOC found");
       })
-      console.log("api/replies/:board results of board on DB: ", thisBoard);
+//      console.log("api/replies/:board results of board on DB: ", thisBoard);
 
-      if (thisBoard) {
-        console.log("found board any replies? ", thisBoard);
-        if (thisBoard.replies) {
-          return res.json(thisBoard);
-        } else {
-          //let path=window.location.pathname;
-          // var currentURL = window.location.pathname.slice(3);
-          //  currentURL = currentURL.split('/');
+//       if (thisBoard) {
+//         console.log("found board any replies? ", thisBoard);
+//         if (thisBoard.replies) {
+//           return res.json(thisBoard);
+//         } else {
+//           //let path=window.location.pathname;
+//           // var currentURL = window.location.pathname.slice(3);
+//           //  currentURL = currentURL.split('/');
 
-          console.log("No replies here  ", thisBoard);
+//           console.log("No replies here  ", thisBoard);
 
-          res.json(thisBoard);
-        }
-      }
+//           res.json(thisBoard);
+//         }
+//    //   }
     
     })
     .put((req, res) => {})
@@ -281,22 +376,32 @@ module.exports = function(app) {
       console.log(
         "inside POST @ api/replies/board ",
         req.body,
-        req.body.thread_id
+        req.params
       );
       // need to get thread_id from params?
 
       let _id = req.body.thread_id; //mongoose.Types.ObjectId(req.body.thread_id); // convert JSON sent in into _id
       let text = req.body.text;
       console.log(" configuring replies to save to db. Reply Text is:", text);
+    // must find board name from thread_id
+    var boardName=req.params.board;
+    // await findBoard(_id, function(err, data){
+    //   if(err) console.log(err);
+    //   if(data){
+    //     boardName=data.board;
+    //     console.log("board name found from ID, ",boardName, JSON.stringify(data));
+    //   }
+    // })
+    
     
     // need function to be passed reply and thread id, and save reply to thread
      await saveReply(req.body, (err, doc)=>{
         if(err) console.log(err);
         if(doc){
           console.log("saved the reply to DB: ", doc);
-          res.redirect("/b/" + req.body.board + "/" + _id); //+'/views/thread.html');
+          res.redirect("/b/" + boardName + "/" + _id); //+'/views/thread.html');
         }
-  })
+      })
    //   let newReply = new Reply(req.body);
    //   let savedReply = await Thread.findOne(_id); //,  { $push: { replies: newReply} });
    //   savedReply.replies.push(newReply);
@@ -306,6 +411,40 @@ module.exports = function(app) {
     })
     .delete((req, res) => {});
 
+  
+  // create route for full response of thread:
+  app
+    .route("/api/replies/:board/:_id")
+    .get(async (req, res) => {
+    
+    let {_id, board} = req.params;
+    console.log("inside api/replies/:board/:_id", _id, board);
+   await findThread(_id, function(err, doc) {
+        if (err) console.log("error reading from db ", err);
+        if (doc) {
+          // thisBoard=doc;
+          console.log("recieved in api/replies/:board doc = ", doc);
+         // thisBoard = doc;
+         
+          //want all docs and all replies, but no report info/passwords
+          
+          
+//           if(doc.replies.length>=3){
+//             doc.replies.sort((a,b)=>{
+//               if(a.replies){
+//                 return (a.replies.bumped_on-b.replies.bumped_on);
+//               }else console.log("no replies here" );
+//             }
+//             );
+//              doc.replies=doc.replies.splice(3);
+//           }
+          
+          console.log("now our doc is ", doc);
+          res.json(doc);
+        } else return (null, "impossible, but no DOC found");
+      });
+  });
+  
   //Sample front-end
   app
     .route("/b/:board/")
