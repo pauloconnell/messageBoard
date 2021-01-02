@@ -29,7 +29,7 @@ Project Anon Message Board
 	Create secure messageboard without needing to create user profiles - simply use password on each post to allow deletion of that post.
   
 ## Goals and Non-Goals
-	GOALS -   Make it work :) NEXT ensure complete functionality of posting from general link AND from index.html
+	GOALS -  see readme, NEXT send full list on querry   /api/replies/{board}?thread_id={thread_id}. Also hiding _id &reported 
 	NON-GOALS- if 2 threads have same content, not going to worry about potential duplicate threads
     -
 
@@ -65,10 +65,9 @@ Project Anon Message Board
 EITHER board.html OR thread.html can save a reply to thread
 
         looks up _id to retrieve replies on this thread
-  thread.html REPLY input from form: POST=> api/threads/reply/:board which
+  thread.html REPLY input from form: POST=> api/threads/reply/:board 
   
   NEXT ALL replies should be sent when hit api/replies/board/:_id
-  Must update the web page this sends such that we can hit a different api to send data they want
   NO - just make this new route work to send back all replies and hide fields like before
   NEXT - build out new route between ////    and //// above api/replies/in api.js
   
