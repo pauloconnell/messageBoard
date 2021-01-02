@@ -1,13 +1,20 @@
-// Design Doc: In ReadMe
-// - this challenge is  confusing as each action creates a chain of API calls and HTML page changes
+// Design Doc: In ReadMe - quick guide here:
+// - this challenge is confusing as each action creates a chain of API calls and HTML page changes
 
 // helper functions to handle database calls
 //findBoard(board, done) - looks up board, returns false if no data or calls done with data of all threads on this board
 //findThread(id, done)  - looks up Thread by ID returns thread
 //saveReplies(replyWithThread_IdIncluded, done)    - saves reply to Thread
-//isExistingThread(board, done)
+//isExistingThread(board, done) - NOT USED - NonGoal= avoid duplicate threads
 //saveThread(thread, done)
 // NOTE: no saveBoard, as a 'board' is simply a bunch of different Threads with the same 'board' name
+
+//API ROUTES:
+///api/threads/:board    - filters results to 10 most reciently bumped threads, with latest 3 replies
+///api/replies/:board"    - accepts query ?id=xxx
+///api/replies/:board/:_id"
+//b/:board/"
+///b/:board/:threadid
 
 "use strict";
 
@@ -160,22 +167,23 @@ module.exports = function(app) {
     //   return true;
   };
 
-  // function to find replies
-  var saveReply = async (board, reply, done) => {
-    console.log("inside saveReply with ", reply);
+  // function to save replies NOTE: thread ID is saved in reply Object for use here, then deleted out
+  var saveReply = async (id, reply, done) => {
+    console.log("inside saveReply with ", id, reply);
     // prep reply to be converted to schema:
     let threadId = reply.thread_id; // as per reply format passed in
     delete reply._id; // to allow new _id for this reply
     reply.created_on = new Date(); // update created on date (otherwise it defaults to when Thread was instantated)
     let newReply = new Reply(reply);
     //update bumped on date in board
-    await Thread.find(board, (err, doc)=>{
-      if(err) console.log("error reading board from DB ", err);
-      if(doc){
-        doc.bumped_on= new Date();
-      }
-      doc.save();
-    })
+    await Thread.findOneAndUpdate({_id:id}, {bumped_on: new Date()});
+    // (err, doc)=>{
+    //   if(err) console.log("error reading board from DB ", err);
+    //   if(doc){
+    //     doc.bumped_on= new Date();
+    //     doc.save();
+    //   }  
+    //})
     // update reply in thread, save and send data back
     await Thread.findById(threadId, (err, data) => {
       if (err) console.log("findDoc error reading DB ", threadId);
@@ -286,40 +294,40 @@ module.exports = function(app) {
     .delete((req, res) => {});
   /////////////////////////////////////////////////
 
-  app
-    .route("/api/replies/:board/:_id")
-    .get(async (req, res) => {
-      //check for replies and return replies or null?
-      let {board} = req.params;
-      let { id, _id, thread_id } = req.query;
-      if (thread_id) {
-        _id = thread_id;
-      }
-      if (id) {
-        _id = id;
-      }
-      console.log(
-        "GET replies/:board recieved from front end - id? ",
-        thread_id,
-        board
-      );
-      _id = await mongoose.Types.ObjectId(thread_id.thread_id); // convert JSON sent in into _id NOT NEEDED
-      //hit db to get replies for :board
-      console.log("_id converted ", _id);
-      //  var thisBoard;
-      await findThread(_id, function(err, doc) {
-        if (err) console.log("error reading from db ", err);
-        if (doc) {
-          // thisBoard=doc;
-          console.log("recieved in api/replies/:board doc = ", doc);
-          res.json(doc);
-        } else return null, "impossible, but no DOC found";
-      });
-    })
-    .put((req, res) => {})
-    .post(async (req, res) => {
-      console.log("inside POST @ api/ALLreplies/board ", req.body, req.params);
-    });
+  // app
+  //   .route("/api/replies/:board/:_id")
+  //   .get(async (req, res) => {
+  //     //check for replies and return replies or null?
+  //     let {board} = req.params;
+  //     let { id, _id, thread_id } = req.query;
+  //     if (thread_id) {
+  //       _id = thread_id;
+  //     }
+  //     if (id) {
+  //       _id = id;
+  //     }
+  //     console.log(
+  //       "GET replies/:board recieved from front end - id? ",
+  //       thread_id,
+  //       board
+  //     );
+  //     _id = await mongoose.Types.ObjectId(thread_id.thread_id); // convert JSON sent in into _id NOT NEEDED
+  //     //hit db to get replies for :board
+  //     console.log("_id converted ", _id);
+  //     //  var thisBoard;
+  //     await findThread(_id, function(err, doc) {
+  //       if (err) console.log("error reading from db ", err);
+  //       if (doc) {
+  //         // thisBoard=doc;
+  //         console.log("recieved in api/replies/:board doc = ", doc);
+  //         res.json(doc);
+  //       } else return null, "impossible, but no DOC found";
+  //     });
+  //   })
+  //   .put((req, res) => {})
+  //   .post(async (req, res) => {
+  //     console.log("inside POST @ api/ALLreplies/board ", req.body, req.params);
+  //   });
 
   ////////////////////////////////////////////////////////////
   app
@@ -328,14 +336,18 @@ module.exports = function(app) {
       //check for replies and return replies or null?
       let board = req.params;
       let {_id, id, thread_id} = req.query;
+      let callFromThreadHtml=false;
+    console.log("req.query is thread_id from front end, or _id/id from user query ",req.query);
       if (thread_id) {
         _id = thread_id;
+        callFromThreadHtml=true;
       }
       if (id) {
         _id = id;
+        callFromThreadHtml=false;
       }
     // if querried specific thread, return all replies
-    if(_id){
+    if(!callFromThreadHtml){
       console.log("_id present, so returning all replies ", _id);
       //  var thisBoard;
       await findThread(_id, function(err, doc) {
@@ -347,8 +359,6 @@ module.exports = function(app) {
         } else return null, "impossible, but no DOC found";
       });
     }else{
-    
-    
       console.log(
         "GET replies/:board recieved from front end - id? ",
         thread_id,
@@ -358,19 +368,20 @@ module.exports = function(app) {
       //hit db to get replies for :board
       console.log("_id converted ", _id);
       //  var thisBoard;
-      await findThread(_id, function(err, doc) {
+      await findThread(thread_id, function(err, doc) {
         if (err) console.log("error reading from db ", err);
         if (doc) {
           console.log("recieved in api/replies/:board doc = ", doc);
           
           // only return the three most recient docs:
           if (doc.replies.length >= 3) {
-            doc.replies.sort((a, b) => {
-              if (a.replies) {
-                return a.replies.bumped_on - b.replies.bumped_on;
-              } else console.log("no replies here");
-            });
-            doc.replies = doc.replies.splice(3);
+            //doc.replies.sort((a, b) => {
+            //  if (a.replies) {
+            //    return a.replies.bumped_on - b.replies.bumped_on;
+            //  } else console.log("no replies here");
+            //});
+            doc.replies.reverse();
+            doc.replies = doc.replies.slice(0,3);
           }
           
           console.log("now our doc is ", doc);
@@ -414,7 +425,7 @@ module.exports = function(app) {
       // })
 
       // need function to be passed reply and thread id, and save reply to thread
-      await saveReply(boardName, req.body, (err, doc) => {
+      await saveReply(_id, req.body, (err, doc) => {
         if (err) console.log(err);
         if (doc) {
           console.log("saved the reply to DB: ", doc);
@@ -431,6 +442,8 @@ module.exports = function(app) {
     .delete((req, res) => {});
 
   // create route for full response of thread:
+  // NOTE: THIS NEVER GETS CALLED IF USER TYPES api/replies/board?id=xxx, so this is handled above
+  // This handles api/replies/board/id
   app.route("/api/replies/:board/:_id").get(async (req, res) => {
     let { _id, board } = req.params;
     console.log("inside api/replies/:board/:_id", _id, board);

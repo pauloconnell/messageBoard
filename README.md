@@ -57,17 +57,16 @@ Project Anon Message Board
    Create a reply on a Thread:
    board.html showing all(10 most recient) threads, user replies to any thread:
      =>POST to api/replies/:board, which calls saveReply(replyWithThreadIdIncluded, done) and redirects to =>b:/:Board/:Id which redirects to=> thread.html
-    
-   thread.html calls
-        GET => api/replies/:board which  sorts by date, and return 3 most recient threads in this board - limited to most recient three only
-
-
-EITHER board.html OR thread.html can save a reply to thread
-
-        looks up _id to retrieve replies on this thread
-  thread.html REPLY input from form: POST=> api/threads/reply/:board 
+     thread.html calls
+        GET => api/replies/:board which  sorts by date, and return 10 most recient threads in this board - limited to most recient three replies each
+        EITHER board.html OR thread.html can save a reply to thread
   
-  NEXT ALL replies should be sent when hit api/replies/board/:_id
+  
+  Get   /api/replies/:board will return only 3 most recient replies
+  Querry  /api/replies/:board/?_id=xxx   ALL replies are sent 
+  
+  Delete thread by sending DELETE request to /api/threads/{board} and pass along the thread_id & delete_password. res=success or invalid passord
+  
   NO - just make this new route work to send back all replies and hide fields like before
   NEXT - build out new route between ////    and //// above api/replies/in api.js
   
