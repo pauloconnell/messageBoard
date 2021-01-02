@@ -1,11 +1,11 @@
-// Design Doc: In ReadMe
-// - this challenge is  confusing as each action creates a chain of API calls and HTML page changes
+// Design Doc: In ReadMe - quick guide here:
+// - this challenge is confusing as each action creates a chain of API calls and HTML page changes
 
 // helper functions to handle database calls
 //findBoard(board, done) - looks up board, returns false if no data or calls done with data of all threads on this board
 //findThread(id, done)  - looks up Thread by ID returns thread
 //saveReplies(replyWithThread_IdIncluded, done)    - saves reply to Thread
-//isExistingThread(board, done)
+//isExistingThread(board, done) - NOT USED - NonGoal= avoid duplicate threads
 //saveThread(thread, done)
 // NOTE: no saveBoard, as a 'board' is simply a bunch of different Threads with the same 'board' name
 
