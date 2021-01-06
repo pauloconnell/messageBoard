@@ -7,6 +7,7 @@
 //saveReplies(replyWithThread_IdIncluded, done)    - saves reply to Thread
 //isExistingThread(board, done) - NOT USED - NonGoal= avoid duplicate threads
 //saveThread(thread, done)
+//deleteThread(thread_id, delete_password)
 // NOTE: no saveBoard, as a 'board' is simply a bunch of different Threads with the same 'board' name
 
 //API ROUTES:
@@ -176,13 +177,13 @@ module.exports = function(app) {
     reply.created_on = new Date(); // update created on date (otherwise it defaults to when Thread was instantated)
     let newReply = new Reply(reply);
     //update bumped on date in board
-    await Thread.findOneAndUpdate({_id:id}, {bumped_on: new Date()});
+    await Thread.findOneAndUpdate({ _id: id }, { bumped_on: new Date() });
     // (err, doc)=>{
     //   if(err) console.log("error reading board from DB ", err);
     //   if(doc){
     //     doc.bumped_on= new Date();
     //     doc.save();
-    //   }  
+    //   }
     //})
     // update reply in thread, save and send data back
     await Thread.findById(threadId, (err, data) => {
@@ -200,6 +201,85 @@ module.exports = function(app) {
         data = "no Replies yet";
         return done(null, null);
       }
+    });
+  };
+
+  var deleteThread = async (thread_id, reply_id, delete_password, done) => {
+    await Thread.findOne({ _id: thread_id }, async (err, data) => {
+      if (err) console.log(err);
+      if (data) {
+        if (data.delete_password == delete_password) {
+          console.log("about to remove this thread ", data);
+          await data.remove();
+
+          return done(null, "success delete completed ");
+        } else return done(null, "incorrect password");
+      }
+    });
+  };
+  
+  var deleteReply = async (thread_id, reply_id, delete_password, done) => {
+    console.log("inside deleteReply with ", thread_id, reply_id, delete_password);
+    var noPasswordFound = true;
+ 
+    // must first confirm password
+    // try{
+    //    await Thread.findOneAndUpdate({"_id": thread_id, "replies.reply_id": reply_id},{$inc:{replycount:-1}, "replies.text.$set": "deleted"});
+    //   return done(null, "success");
+    // }catch (err){console.log("err saving reply deletion",err);}
+    
+    
+    await Thread.findOne({ _id: thread_id }, async (err, data) => {
+      if (err) console.log(err);
+      if (data) {
+        console.log("found thread with replies: ", data.replies);
+        if (data.replies) {
+          //use for loop using to keep track of which reply this is in the array
+          for(var index=0; index<data.replies.length; index++){
+            if(data.replies[index]._id==reply_id){
+              if(data.replies[index].delete_password==delete_password&&(noPasswordFound)){
+                data.replies[index].text="deleted";
+                data.save();
+                noPasswordFound=false;
+              }
+            }
+          }            
+ //         Thread.updateOne(
+ //  { _id: thread_id, "replies._id": reply_id },
+ //  { $set: { "replies.$.text" :"deleted" } }
+ // );
+          
+          
+          //for(var index=0; index<data.replies.length; index++){
+        //  data.replies.forEach(async reply => {
+            // console.log("reply text is ",data.replies.text);
+            // if (data.replies.delete_password==delete_password) {
+            //   console.log("found reply");
+            //     noPasswordFound = false;
+            //     data.replies.text = "deleted";
+            //    try{
+            //      // await Reply.save(reply); // need to save updated reply back to thread
+            //     await data.save( done());
+                 //await Thread.findOneAndUpdate({_id: thread_id, "replies.reply_id": reply_id},{$inc:{replycount:-1}, "replies.$": reply});
+            //    }catch (err){console.log("err saving reply deletion",err);
+                
+                //update bumped on date in board
+               // try{
+               //   await Thread.findOneAndUpdate({ _id: thread_id }, { bumped_on: new Date(), $inc:{replycount:-1}, replies: [index].text="deleted" });
+               // }catch{console.log("error deleting reply to db", err)}
+               //   console.log()
+                
+                
+                
+                return done(null, "success");
+              } // if data.replies
+            }   // if data
+         // }); for Each loop
+        //  } for loop(used forEach instead)
+          if (noPasswordFound) {
+            return done(null, "found data but incorrect password");
+          } else return done(null, "no replies here to delete");
+      
     });
   };
 
@@ -291,7 +371,23 @@ module.exports = function(app) {
       console.log(" will redirect  thisThread to GET b/board ");
       // res.redirect("/b/" + thisThread.board);// redirect to board showing all replies instead of just this thread => + "/" + thisThread._id); //(`/b/{board}`);
     })
-    .delete((req, res) => {});
+    .delete(async (req, res) => {
+      var { thread_id, delete_password } = req.body;
+      console.log(
+        "/api/threads/:board  DELETE recieved: ",
+        req.body,
+        req.params
+      ); // board,text, password only?
+      await deleteThread(thread_id, delete_password, async (err, response) => {
+        if (err) console.log(err);
+        if (response) {
+          console.log("response from delete is ", response);
+          res.send(response);
+        }
+      });
+      //console.log("response from delete is ", response);
+      //res.send(response);
+    });
   /////////////////////////////////////////////////
 
   // app
@@ -335,75 +431,78 @@ module.exports = function(app) {
     .get(async (req, res) => {
       //check for replies and return replies or null?
       let board = req.params;
-      let {_id, id, thread_id} = req.query;
-      let callFromThreadHtml=false;
-    console.log("req.query is thread_id from front end, or _id/id from user query ",req.query);
+      let { _id, id, thread_id } = req.query;
+      let callFromThreadHtml = false;
+      console.log(
+        "req.query is thread_id from front end, or _id/id from user query ",
+        req.query
+      );
       if (thread_id) {
         _id = thread_id;
-        callFromThreadHtml=true;
+        callFromThreadHtml = true;
       }
       if (id) {
         _id = id;
-        callFromThreadHtml=false;
+        callFromThreadHtml = false;
       }
-    // if querried specific thread, return all replies
-    if(!callFromThreadHtml){
-      console.log("_id present, so returning all replies ", _id);
-      //  var thisBoard;
-      await findThread(_id, function(err, doc) {
-        if (err) console.log("error reading from db ", err);
-        if (doc) {
-          // thisBoard=doc;
-          console.log("recieved in api/replies/:board doc = ", doc);
-          res.json(doc);
-        } else return null, "impossible, but no DOC found";
-      });
-    }else{
-      console.log(
-        "GET replies/:board recieved from front end - id? ",
-        thread_id,
-        board
-      );
-      _id = await mongoose.Types.ObjectId(thread_id.thread_id); // convert JSON sent in into _id NOT NEEDED
-      //hit db to get replies for :board
-      console.log("_id converted ", _id);
-      //  var thisBoard;
-      await findThread(thread_id, function(err, doc) {
-        if (err) console.log("error reading from db ", err);
-        if (doc) {
-          console.log("recieved in api/replies/:board doc = ", doc);
-          
-          // only return the three most recient docs:
-          if (doc.replies.length >= 3) {
-            //doc.replies.sort((a, b) => {
-            //  if (a.replies) {
-            //    return a.replies.bumped_on - b.replies.bumped_on;
-            //  } else console.log("no replies here");
-            //});
-            doc.replies.reverse();
-            doc.replies = doc.replies.slice(0,3);
-          }
-          
-          console.log("now our doc is ", doc);
-          res.json(doc);
-        } else return null, "impossible, but no DOC found";
-      });
-      //      console.log("api/replies/:board results of board on DB: ", thisBoard);
+      // if querried specific thread, return all replies
+      if (!callFromThreadHtml) {
+        console.log("_id present, so returning all replies ", _id);
+        //  var thisBoard;
+        await findThread(_id, function(err, doc) {
+          if (err) console.log("error reading from db ", err);
+          if (doc) {
+            // thisBoard=doc;
+            console.log("recieved in api/replies/:board doc = ", doc);
+            res.json(doc);
+          } else return null, "impossible, but no DOC found";
+        });
+      } else {
+        console.log(
+          "GET replies/:board recieved from front end - id? ",
+          thread_id,
+          board
+        );
+        _id = await mongoose.Types.ObjectId(thread_id.thread_id); // convert JSON sent in into _id NOT NEEDED
+        //hit db to get replies for :board
+        console.log("_id converted ", _id);
+        //  var thisBoard;
+        await findThread(thread_id, function(err, doc) {
+          if (err) console.log("error reading from db ", err);
+          if (doc) {
+            console.log("recieved in api/replies/:board doc = ", doc);
 
-      //       if (thisBoard) {
-      //         console.log("found board any replies? ", thisBoard);
-      //         if (thisBoard.replies) {
-      //           return res.json(thisBoard);
-      //         } else {
-      //           //let path=window.location.pathname;
-      //           // var currentURL = window.location.pathname.slice(3);
-      //           //  currentURL = currentURL.split('/');
+            // only return the three most recient docs:
+            if (doc.replies.length >= 3) {
+              //doc.replies.sort((a, b) => {
+              //  if (a.replies) {
+              //    return a.replies.bumped_on - b.replies.bumped_on;
+              //  } else console.log("no replies here");
+              //});
+              doc.replies.reverse();
+              doc.replies = doc.replies.slice(0, 3);
+            }
 
-      //           console.log("No replies here  ", thisBoard);
+            console.log("now our doc is ", doc);
+            res.json(doc);
+          } else return null, "impossible, but no DOC found";
+        });
+        //      console.log("api/replies/:board results of board on DB: ", thisBoard);
 
-      //           res.json(thisBoard);
-      //         }
-      //    //   }
+        //       if (thisBoard) {
+        //         console.log("found board any replies? ", thisBoard);
+        //         if (thisBoard.replies) {
+        //           return res.json(thisBoard);
+        //         } else {
+        //           //let path=window.location.pathname;
+        //           // var currentURL = window.location.pathname.slice(3);
+        //           //  currentURL = currentURL.split('/');
+
+        //           console.log("No replies here  ", thisBoard);
+
+        //           res.json(thisBoard);
+        //         }
+        //    //   }
       }
     })
     .put((req, res) => {})
@@ -439,7 +538,26 @@ module.exports = function(app) {
       //   console.log("saved the reply to DB: ", savedReply.board, savedReply);
       //   res.redirect("/b/" + savedReply.board + "/" + savedReply._id); //+'/views/thread.html');
     })
-    .delete((req, res) => {});
+    .delete(async (req, res) => {
+      console.log(
+        "/api/replies/:board  DELETE recieved: ",
+        req.body,
+        req.params
+      ); 
+      let { thread_id, reply_id, delete_password } = req.body;
+      await deleteReply(
+        thread_id,
+        reply_id,
+        delete_password,
+        async (err, doc) => {
+          if (err) console.log(err);
+          else {
+            console.log("api recieved back ",doc);
+            res.send(doc);
+          }
+        }
+      );
+    });
 
   // create route for full response of thread:
   // NOTE: THIS NEVER GETS CALLED IF USER TYPES api/replies/board?id=xxx, so this is handled above
