@@ -35,11 +35,12 @@ Project Anon Message Board
 
 ## Milestones
 	Start Date: Dec 7, 2020
-  Milestone 1 — Hook up MongoDB and code up api route to allow board/Thread creation Dec 15
-	Milestone 2 - Get replies working seamlessly - note General board is causing errors fix Dec 29
+  ```
+  Milestone 1 — Done Hook up MongoDB and code up api route to allow board/Thread creation Dec 15
+	Milestone 2 - Done Get replies working seamlessly - note General board is causing errors fix Dec 29
   Milestone 2 - build out other API routes to delete ect. Jan 2021
 	End Date: Jan 2021
-
+```
 ## Existing Solution/User Story
   See UserStories @ index.html
   
