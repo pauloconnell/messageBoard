@@ -77,6 +77,7 @@
         
         
         $('#boardDisplay').on('submit','#reportThread', function(e) {
+          console.log("recieved a report for thread ",currentURL[0]);
           var url = "/api/threads/"+currentURL[0];
           $.ajax({
             type: "PUT",

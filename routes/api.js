@@ -282,6 +282,38 @@ module.exports = function(app) {
       
     });
   };
+  
+  var reportThread=async(thread_id, done)=>{
+    console.log("inside reportThread with ",thread_id);
+    await Thread.findOneAndUpdate({"_id":thread_id}, {$set:{"reported":true}},{new:true}, async(err,doc)=>{
+      if(err) console.log("err looking up thread ", thread_id, err);
+      else{
+          console.log(doc);
+          return done(null,"success");
+                  
+      }// else done(err);
+    });
+  }
+  
+  var reportReply=async(thread_id, reply_id, done)=>{
+    console.log("inside reportReply with ", reply_id);
+    await Thread.findOne({"_id":thread_id}, async(err, doc)=>{
+      if (err) console.log("err reading from db ", thread_id, err);
+      if(doc){
+        if(doc.replies){
+          for(let x=0; x<doc.replies.length; x++){
+            if(doc.replies[x]._id==reply_id){
+              doc.replies[x].reported=true;
+              await doc.save(done(null, "success"));
+              console.log("reply has been reported");
+              //return done(null, "success")
+            }
+          }
+        }
+        
+      }else done("failed to get doc")
+                         });
+  }
 
   app.route("/api").get((req, res) => {
     res.sendFile(process.cwd() + "/views/index.html");
@@ -332,7 +364,17 @@ module.exports = function(app) {
 
       // return entries
     })
-    .put((req, res) => {})
+    .put(async(req, res) => {
+    var {report_id}=req.body;
+    console.log("recieved put api/threads/:board", req.body);
+    await reportThread(report_id, async(err, data)=>{
+      if(err) console.log("err reporting thread",err);
+      if(data){
+        console.log("thread reported:", data)
+        res.send(data);
+      }else res.send("reporting failed");
+    });
+  })
     .post(async (req, res) => {
       // save Thread -which creates thread for board
       //var {text, reported, delete_password, replies}=req.body;
@@ -505,7 +547,14 @@ module.exports = function(app) {
         //    //   }
       }
     })
-    .put((req, res) => {})
+    .put(async(req, res) => {
+      console.log("inside PUT @ api/replies/board ", req.body);
+      var {thread_id, reply_id}=req.body;
+      await reportReply(thread_id, reply_id, async(err, doc)=>{
+        if(err) console.log("error reporting reply ",err);
+        if(doc) res.send(doc);
+      });
+  })
     .post(async (req, res) => {
       console.log("inside POST @ api/replies/board ", req.body, req.params);
       // need to get thread_id from params?
