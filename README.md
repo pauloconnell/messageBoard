@@ -38,8 +38,9 @@ Project Anon Message Board
   ```
   Milestone 1 — Done Hook up MongoDB and code up api route to allow board/Thread creation Dec 15
 	Milestone 2 - Done Get replies working seamlessly - note General board is causing errors fix Dec 29
-  Milestone 2 - build out other API routes to delete ect. Jan 2021
+  Milestone 3 - build out other API routes to delete ect. Jan 2021
 	End Date: Jan 2021
+  Milestone 4 - Future project(non-goal) - add a feature to show all boards, and be able to click on any list item to access that board 
 ```
 ## Existing Solution/User Story
   See UserStories @ index.html
@@ -54,22 +55,23 @@ Project Anon Message Board
     redirects to GET=> b/:board(NOT WITH /:id so it shows ALL Threads in this board)  which  
       =>Board.html will GET => api/threads/:board which sends back all threads on this board:(limited to 10 most recient)
        From here, user can reply to any Thread on this board
-       
+  Report a thread
+  PUT=> /api/threads/{board}
+    call reportThread, which changes it's reported value to true
+
+
    Create a reply on a Thread:
    board.html showing all(10 most recient) threads, user replies to any thread:
      =>POST to api/replies/:board, which calls saveReply(replyWithThreadIdIncluded, done) and redirects to =>b:/:Board/:Id which redirects to=> thread.html
      thread.html calls
-        GET => api/replies/:board which  sorts by date, and return 10 most recient threads in this board - limited to most recient three replies each
-        EITHER board.html OR thread.html can save a reply to thread
+      GET => api/replies/:board which  sorts by date, and return 10 most recient threads in this board - limited to most recient three replies each
+      EITHER board.html OR thread.html can save a reply to thread
+      DELETE => calls deleteReply, which hits db to confirm password, then updates reply TEXT to be "deleted" as per specs
+
+  URL Querry=>  /api/replies/:board/?_id=xxx   ALL replies are sent back in JSON
   
+
   
-  Get   /api/replies/:board will return only 3 most recient replies
-  Querry  /api/replies/:board/?_id=xxx   ALL replies are sent 
-  
-  Delete thread by sending DELETE request to /api/threads/{board} and pass along the thread_id & delete_password. res=success or invalid passord
-  
-  NO - just make this new route work to send back all replies and hide fields like before
-  NEXT - build out new route between ////    and //// above api/replies/in api.js
   
   
 ```
@@ -87,3 +89,12 @@ Project Anon Message Board
 
 ## Detailed Scoping and Timeline (Used by dev team during creation)
 	how and when each section of project will be done - 
+  ```
+  -Milestone 4 - Overview of all boards
+    on index page, show a list of links to each 'board'
+      -create function to access db, and create a list of unique board names with a link to that 'board'
+      -create component to house this list and include it on the index page and in Thread.html so it's easily accessable 
+        
+  
+  
+  ```

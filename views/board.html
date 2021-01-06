@@ -88,7 +88,9 @@
             type: "PUT",
             url: url,
             data: $(this).serialize(),
-            success: function(data) { alert(data) }
+            success: function(data) { 
+              console.log("reporting thread ", data);
+              alert(data) }
           });
           e.preventDefault();
         });
