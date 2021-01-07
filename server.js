@@ -23,7 +23,7 @@ app.use(helmet());
 // add referrerPolicy ( not present by default)
 app.use(
   helmet.referrerPolicy({
-    policy: ["origin"]
+    policy: ["same-origin"]
   })
 );
 
