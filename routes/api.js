@@ -1,5 +1,5 @@
 // Design Doc: In ReadMe - quick guide here:
-// - this challenge is confusing as each action creates a chain of API calls and HTML page changes
+// - this challenge is a bit confusing as each submit/action creates a chain of API calls and HTML page changes
 
 // helper functions to handle database calls
 //findBoard(board, done) - looks up board, returns false if no data or calls done with data of all threads on this board
@@ -33,7 +33,7 @@ module.exports = function(app) {
   mongoose.set("useFindAndModify", false);
 
   // set up schema/model
-  // threads are board topics, which hold their own replies
+  // threads are board topics, which hold their own replies in an array
 
   var replySchema = new mongoose.Schema({
     text: { type: String, required: true },
@@ -68,20 +68,18 @@ module.exports = function(app) {
   var findBoard = async (board, done) => {
     console.log("FindBoard about to look up ", board, typeof board);
     if (typeof board != "object") {
-      board = { board: board };
       board = { board: board }; // General board links with object, so ensure we have object to look up here
-    }
+      //          I can GET an array of the most recent 10 bumped threads on the board with only the most recent 3 replies from /api/threads/{board}.
+    } // sort results based on most recent 'bumped' threads-showing most recent 10
     await Thread.find(board)
       .sort({ bumped_on: -1 })
       .exec((err, data) => {
         if (err) console.log("findBoard error reading DB ", board, err);
         if (data.length == 0) {
           console.log(" It should be Impossible, but no board yet for ", board);
-
           return done(null, false);
         } else {
           console.log("found board", board, JSON.stringify(data));
-
           // arrange results as per spec
           while (data.length >= 11) {
             data.pop();
@@ -90,10 +88,10 @@ module.exports = function(app) {
           console.log("data now has max 10 items ", data.length);
 
           data.forEach(doc => {
-            delete data.reported;
+            delete data.reported; //The reported and delete_passwords fields will not be sent.
             delete data.delete_password;
             while (doc.replies.length >= 4) {
-              doc.replies.shift(); // remove the oldest reply until there are only 3 most receint here
+              doc.replies.shift(); // remove the oldest reply until there are only 3 most recent here
             }
             console.log(
               "prepared 10 data with max 3 replies",
@@ -101,12 +99,8 @@ module.exports = function(app) {
               doc.bumped_on,
               doc.replies
             );
-            //doc.replies=doc.replies.slice(doc.replies.length-2);
           });
           console.log("now data is max 10 items, with max 3 replies");
-
-          //          I can GET an array of the most recent 10 bumped threads on the board with only the most recent 3 replies from /api/threads/{board}.
-          //The reported and delete_passwords fields will not be sent.
 
           return done(null, data);
         }
@@ -119,8 +113,6 @@ module.exports = function(app) {
     Thread.findById(id, done);
   };
 
-  // check if thread exists before calling saveThread
-  // delete this
   // NON GOAL - not going to worry about double threads
   var isExistingThread = async (thread, done) => {
     // next: first check for board, false or get_id and check for thread
@@ -178,13 +170,7 @@ module.exports = function(app) {
     let newReply = new Reply(reply);
     //update bumped on date in board
     await Thread.findOneAndUpdate({ _id: id }, { bumped_on: new Date() });
-    // (err, doc)=>{
-    //   if(err) console.log("error reading board from DB ", err);
-    //   if(doc){
-    //     doc.bumped_on= new Date();
-    //     doc.save();
-    //   }
-    //})
+
     // update reply in thread, save and send data back
     await Thread.findById(threadId, (err, data) => {
       if (err) console.log("findDoc error reading DB ", threadId);
@@ -211,109 +197,110 @@ module.exports = function(app) {
         if (data.delete_password == delete_password) {
           console.log("about to remove this thread ", data);
           await data.remove();
-
           return done(null, "success delete completed ");
         } else return done(null, "incorrect password");
       }
     });
   };
-  
+
   var deleteReply = async (thread_id, reply_id, delete_password, done) => {
-    console.log("inside deleteReply with ", thread_id, reply_id, delete_password);
+    console.log(
+      "inside deleteReply with ",
+      thread_id,
+      reply_id,
+      delete_password
+    );
     var noPasswordFound = true;
- 
+
     // must first confirm password
-    // try{
-    //    await Thread.findOneAndUpdate({"_id": thread_id, "replies.reply_id": reply_id},{$inc:{replycount:-1}, "replies.text.$set": "deleted"});
-    //   return done(null, "success");
-    // }catch (err){console.log("err saving reply deletion",err);}
-    
-    
+
     await Thread.findOne({ _id: thread_id }, async (err, data) => {
       if (err) console.log(err);
       if (data) {
         console.log("found thread with replies: ", data.replies);
         if (data.replies) {
           //use for loop using to keep track of which reply this is in the array
-          for(var index=0; index<data.replies.length; index++){
-            if(data.replies[index]._id==reply_id){
-              if(data.replies[index].delete_password==delete_password&&(noPasswordFound)){
-                data.replies[index].text="deleted";
+          for (var index = 0; index < data.replies.length; index++) {
+            if (data.replies[index]._id == reply_id) {
+              if (
+                data.replies[index].delete_password == delete_password &&
+                noPasswordFound
+              ) {
+                data.replies[index].text = "deleted";
                 data.save();
-                noPasswordFound=false;
+                noPasswordFound = false;
               }
             }
-          }            
- //         Thread.updateOne(
- //  { _id: thread_id, "replies._id": reply_id },
- //  { $set: { "replies.$.text" :"deleted" } }
- // );
-          
-          
+          }
+          //         Thread.updateOne(
+          //  { _id: thread_id, "replies._id": reply_id },
+          //  { $set: { "replies.$.text" :"deleted" } }
+          // );
+
           //for(var index=0; index<data.replies.length; index++){
-        //  data.replies.forEach(async reply => {
-            // console.log("reply text is ",data.replies.text);
-            // if (data.replies.delete_password==delete_password) {
-            //   console.log("found reply");
-            //     noPasswordFound = false;
-            //     data.replies.text = "deleted";
-            //    try{
-            //      // await Reply.save(reply); // need to save updated reply back to thread
-            //     await data.save( done());
-                 //await Thread.findOneAndUpdate({_id: thread_id, "replies.reply_id": reply_id},{$inc:{replycount:-1}, "replies.$": reply});
-            //    }catch (err){console.log("err saving reply deletion",err);
-                
-                //update bumped on date in board
-               // try{
-               //   await Thread.findOneAndUpdate({ _id: thread_id }, { bumped_on: new Date(), $inc:{replycount:-1}, replies: [index].text="deleted" });
-               // }catch{console.log("error deleting reply to db", err)}
-               //   console.log()
-                
-                
-                
-                return done(null, "success");
-              } // if data.replies
-            }   // if data
-         // }); for Each loop
-        //  } for loop(used forEach instead)
-          if (noPasswordFound) {
-            return done(null, "found data but incorrect password");
-          } else return done(null, "no replies here to delete");
-      
+          //  data.replies.forEach(async reply => {
+          // console.log("reply text is ",data.replies.text);
+          // if (data.replies.delete_password==delete_password) {
+          //   console.log("found reply");
+          //     noPasswordFound = false;
+          //     data.replies.text = "deleted";
+          //    try{
+          //      // await Reply.save(reply); // need to save updated reply back to thread
+          //     await data.save( done());
+          //await Thread.findOneAndUpdate({_id: thread_id, "replies.reply_id": reply_id},{$inc:{replycount:-1}, "replies.$": reply});
+          //    }catch (err){console.log("err saving reply deletion",err);
+
+          //update bumped on date in board
+          // try{
+          //   await Thread.findOneAndUpdate({ _id: thread_id }, { bumped_on: new Date(), $inc:{replycount:-1}, replies: [index].text="deleted" });
+          // }catch{console.log("error deleting reply to db", err)}
+          //   console.log()
+
+          return done(null, "success");
+        } // if data.replies
+      } // if data
+      // }); for Each loop
+      //  } for loop(used forEach instead)
+      if (noPasswordFound) {
+        return done(null, "found data but incorrect password");
+      } else return done(null, "no replies here to delete");
     });
   };
-  
-  var reportThread=async(thread_id, done)=>{
-    console.log("inside reportThread with ",thread_id);
-    await Thread.findOneAndUpdate({"_id":thread_id}, {$set:{"reported":true}},{new:true}, async(err,doc)=>{
-      if(err) console.log("err looking up thread ", thread_id, err);
-      else{
+
+  var reportThread = async (thread_id, done) => {
+    console.log("inside reportThread with ", thread_id);
+    await Thread.findOneAndUpdate(
+      { _id: thread_id },
+      { $set: { reported: true } },
+      { new: true },
+      async (err, doc) => {
+        if (err) console.log("err looking up thread ", thread_id, err);
+        else {
           console.log(doc);
-          return done(null,"success");
-                  
-      }// else done(err);
-    });
-  }
-  
-  var reportReply=async(thread_id, reply_id, done)=>{
+          return done(null, "success");
+        } // else done(err);
+      }
+    );
+  };
+
+  var reportReply = async (thread_id, reply_id, done) => {
     console.log("inside reportReply with ", reply_id);
-    await Thread.findOne({"_id":thread_id}, async(err, doc)=>{
+    await Thread.findOne({ _id: thread_id }, async (err, doc) => {
       if (err) console.log("err reading from db ", thread_id, err);
-      if(doc){
-        if(doc.replies){
-          for(let x=0; x<doc.replies.length; x++){
-            if(doc.replies[x]._id==reply_id){
-              doc.replies[x].reported=true;
+      if (doc) {
+        if (doc.replies) {
+          for (let x = 0; x < doc.replies.length; x++) {
+            if (doc.replies[x]._id == reply_id) {
+              doc.replies[x].reported = true;
               await doc.save(done(null, "success"));
               console.log("reply has been reported");
               //return done(null, "success")
             }
           }
         }
-        
-      }else done("failed to get doc")
-                         });
-  }
+      } else done("failed to get doc");
+    });
+  };
 
   app.route("/api").get((req, res) => {
     res.sendFile(process.cwd() + "/views/index.html");
@@ -364,17 +351,17 @@ module.exports = function(app) {
 
       // return entries
     })
-    .put(async(req, res) => {
-    var {report_id}=req.body;
-    console.log("recieved put api/threads/:board", req.body);
-    await reportThread(report_id, async(err, data)=>{
-      if(err) console.log("err reporting thread",err);
-      if(data){
-        console.log("thread reported:", data)
-        res.send(data);
-      }else res.send("reporting failed");
-    });
-  })
+    .put(async (req, res) => {
+      var { report_id } = req.body;
+      console.log("recieved put api/threads/:board", req.body);
+      await reportThread(report_id, async (err, data) => {
+        if (err) console.log("err reporting thread", err);
+        if (data) {
+          console.log("thread reported:", data);
+          res.send(data);
+        } else res.send("reporting failed");
+      });
+    })
     .post(async (req, res) => {
       // save Thread -which creates thread for board
       //var {text, reported, delete_password, replies}=req.body;
@@ -547,14 +534,14 @@ module.exports = function(app) {
         //    //   }
       }
     })
-    .put(async(req, res) => {
+    .put(async (req, res) => {
       console.log("inside PUT @ api/replies/board ", req.body);
-      var {thread_id, reply_id}=req.body;
-      await reportReply(thread_id, reply_id, async(err, doc)=>{
-        if(err) console.log("error reporting reply ",err);
-        if(doc) res.send(doc);
+      var { thread_id, reply_id } = req.body;
+      await reportReply(thread_id, reply_id, async (err, doc) => {
+        if (err) console.log("error reporting reply ", err);
+        if (doc) res.send(doc);
       });
-  })
+    })
     .post(async (req, res) => {
       console.log("inside POST @ api/replies/board ", req.body, req.params);
       // need to get thread_id from params?
@@ -592,7 +579,7 @@ module.exports = function(app) {
         "/api/replies/:board  DELETE recieved: ",
         req.body,
         req.params
-      ); 
+      );
       let { thread_id, reply_id, delete_password } = req.body;
       await deleteReply(
         thread_id,
@@ -601,7 +588,7 @@ module.exports = function(app) {
         async (err, doc) => {
           if (err) console.log(err);
           else {
-            console.log("api recieved back ",doc);
+            console.log("api recieved back ", doc);
             res.send(doc);
           }
         }
