@@ -9,15 +9,25 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="/public/style.css">
   </head>
-  <body>
+  <body><center>
     <header>
       <h1 id="threadTitle"></h1>
     </header>
     <br>
+     <h2>
+      This page is dedicated to this thread(unique _id displayed in URL) and it's replies.
+    </h2>
+       <hr style="margin: 50px">
+   <br><h2><a href="/b/general/">Go to testing <i>'/b/general/'</i> board</a></h2>
+    Note: you can look up any board by replacing URL /b/<u>general/_id</u> with /b/anyBoardName to see all entries on anyBoardName<br>
     
+    <hr style="margin: 50px">
     <div id="boardDisplay"></div>
-    
+    <hr>
+   
     <hr style="margin: 50px; margin-top: 200px">
+    </center>
+    
     <!-- Your web-app is https, so your scripts need to be too -->
     <script src="https://code.jquery.com/jquery-2.2.1.min.js"
             integrity="sha256-gvQgAFzTH6trSrAWoH1iPo9Xc96QxSZ3feW6kem+O00="
@@ -30,7 +40,8 @@
         console.log("inside thread.htm get url currentURL is ", currentURL);//
           currentURL = currentURL.split('/');
         var url = "/api/replies/"+currentURL[0];  //+"/"+currentURL[1]; this is sent as data below
-        $('#threadTitle').text(currentURL[0]+"Welcome to Thread.html! "+ window.location.pathname);
+        $('#threadTitle').text("Welcome to Thread.html! ");
+        
         $.ajax({
           type: "GET",
           url: url,
