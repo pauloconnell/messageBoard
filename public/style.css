@@ -9,6 +9,29 @@ body {
   background-size:100%;
 }
 
+.background {
+  background-color:rgba(114,211,254,.5);
+}
+
+.id {
+  font-size: 10.5px;
+}
+
+.main{
+    
+}
+
+.myForm {
+  border: 2px solid black;
+  padding: 5px;
+  margin-bottom: 5px;
+  width:30%;
+}
+
+.newReply {
+  margin: 10px 5px 10px 5px;
+}
+
 .replies {
   margin-left: 50px;
 }
@@ -22,10 +45,6 @@ body {
   background:white;
 }
 
-.newReply {
-  margin: 10px 5px 10px 5px;
-}
-
 .thread {
   border: 2px solid black;
   padding: 5px;
@@ -35,17 +54,6 @@ body {
   background:white;
 }
 
-.id {
-  font-size: 10.5px;
-}
-
-.myForm {
-  border: 2px solid black;
-  padding: 5px;
-  margin-bottom: 5px;
-  width:30%;
-}
-}
 
 
 #submitNewThread {
