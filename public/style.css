@@ -6,13 +6,10 @@
 body {
   padding: 10px;
   background: url(
-      https://res.cloudinary.com/pollie/image/upload/w_1000,
-      ar_16:9,
-      c_fill,
-      g_auto,
-      e_sharpen/v1606772272/AlpineWB_bzkw1l.jpg
-    )no-repeat fixed;
+      https://res.cloudinary.com/pollie/image/upload/v1606772272/AlpineWB_bzkw1l.jpg
+    )no-repeat;
   background-size: 100%;
+  background-attachment: fixed;
 }
 
 .background {
