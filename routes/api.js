@@ -85,9 +85,11 @@ module.exports = function(app) {
             console.log("trimming to 10 items ", data.length);
           }
           console.log("data now has max 10 items ", data.length);
-          let onlyBoards = [];
+          const onlyBoards = [];
           data.forEach(doc => {
-            onlyBoards.push(doc.board);
+            if (onlyBoards.includes(doc.board)) {
+              //only add each board name once
+            } else onlyBoards.push(doc.board);
 
             while (doc.replies.length >= 4) {
               doc.replies.shift(); // remove the oldest reply until there are only 3 most recent here

@@ -369,7 +369,7 @@
         const response = await fetch("/api/allBoards/");
         const data = await response.json();
 
-        document.getElementById("boardNames").textContent = data;
+        document.getElementById("boardNames").textContent = JSON.stringify(data);
       }
       getAllBoards();
     </script>
