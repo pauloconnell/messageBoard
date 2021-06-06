@@ -5,8 +5,36 @@
 
 body {
   padding: 10px;
-  background:url(https://res.cloudinary.com/pollie/image/upload/w_1000,ar_16:9,c_fill,g_auto,e_sharpen/v1606772272/AlpineWB_bzkw1l.jpg) no-repeat fixed;
-  background-size:100%;
+  background: url(
+      https://res.cloudinary.com/pollie/image/upload/v1606772272/AlpineWB_bzkw1l.jpg
+    )no-repeat;
+  background-size: 100%;
+  background-attachment: fixed;
+}
+
+.background {
+  background-color: rgba(114, 211, 254, 0.5);
+}
+
+.id {
+  font-size: 10.5px;
+}
+
+.main {
+}
+.main:hover {
+  background: white;
+}
+
+.myForm {
+  border: 2px solid black;
+  padding: 5px;
+  margin-bottom: 5px;
+  width: 30%;
+}
+
+.newReply {
+  margin: 10px 5px 10px 5px;
 }
 
 .replies {
@@ -19,11 +47,7 @@ body {
   padding: 5px;
 }
 .reply:hover {
-  background:white;
-}
-
-.newReply {
-  margin: 10px 5px 10px 5px;
+  background: white;
 }
 
 .thread {
@@ -32,26 +56,13 @@ body {
   margin-bottom: 5px;
 }
 .thread:hover {
-  background:white;
+  background: white;
 }
-
-.id {
-  font-size: 10.5px;
-}
-
-.myForm {
-  border: 2px solid black;
-  padding: 5px;
-  margin-bottom: 5px;
-  width:30%;
-}
-}
-
 
 #submitNewThread {
   margin: 50px;
 }
 
 #userstories:hover {
-  background:white;
+  background: white;
 }

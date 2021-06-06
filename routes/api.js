@@ -19,7 +19,6 @@
 //b/:board/"
 ///b/:board/:threadid
 
-
 "use strict";
 
 var expect = require("chai").expect;
@@ -66,6 +65,41 @@ module.exports = function(app) {
   );
 
   // define our helper functions to handle database calls
+
+  // hit DB to get list of all boards
+  var findAllBoards = async done => {
+    console.log("FindAllBoards about to get boards");
+
+    await Thread.find()
+      .sort({ bumped_on: -1 })
+      .exec((err, data) => {
+        if (err) console.log("findBoard error reading DB ", err);
+        if (data.length == 0) {
+          console.log(" No boards yet for ");
+          return done(null, false);
+        } else {
+          console.log("found boards", JSON.stringify(data));
+          // arrange results as per spec
+          while (data.length >= 11) {
+            data.pop();
+            console.log("trimming to 10 items ", data.length);
+          }
+          console.log("data now has max 10 items ", data.length);
+          const onlyBoards = [];
+          data.forEach(doc => {
+            if (onlyBoards.includes(doc.board)) {
+              //only add each board name once
+            } else onlyBoards.push(doc.board);
+
+            while (doc.replies.length >= 4) {
+              doc.replies.shift(); // remove the oldest reply until there are only 3 most recent here
+            }
+          });
+          console.log("prepared board names");
+          return done(null, onlyBoards);
+        }
+      });
+  };
 
   // hit DB to get all docs for this board
   var findBoard = async (board, done) => {
@@ -475,7 +509,7 @@ module.exports = function(app) {
 
   // create route for full response of thread:
   // NOTE: THIS NEVER GETS CALLED IF USER TYPES api/replies/board?id=xxx, so this is handled above
-  // This handles api/replies/board/id
+  // This route handles api/replies/board/id
   app.route("/api/replies/:board/:_id").get(async (req, res) => {
     let { _id, board } = req.params;
     console.log("inside api/replies/:board/:_id", _id, board);
@@ -485,6 +519,19 @@ module.exports = function(app) {
         console.log("recieved in api/replies/:board doc = ", doc);
 
         console.log("now our doc is ", doc);
+        res.json(doc);
+      } else return null, "impossible, but no DOC found";
+    });
+  });
+
+  app.route("/api/allBoards/").get(async (req, res) => {
+    //let { _id, board } = req.params;
+    console.log("inside api/allBoards");
+    await findAllBoards(function(err, doc) {
+      if (err) console.log("error reading from db ", err);
+      if (doc) {
+        console.log("recieved in api/allBoards = ", doc);
+
         res.json(doc);
       } else return null, "impossible, but no DOC found";
     });
