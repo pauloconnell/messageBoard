@@ -38,15 +38,17 @@
       </h3>
       <br />
       <span class="thread" id="boardNames"></span>
-      <br /><br />
+      <br /><br /><br /><br />
 
       <div id="testui">
         <h2 style="text-align: center">API Tests:</h2>
-        <div class="background main thread">
-          <h4>New thread (POST /api/threads/:board)</h4>
+        <br />
+        <br /><br />
+        <h4 class="main">
+          New thread (POST /api/threads/:board)
 
           <form
-            class="myForm"
+            class="myForm background thread"
             action="/api/threads/test"
             method="post"
             id="newThread"
@@ -73,140 +75,151 @@
             /><br />
             <input type="submit" value="Submit" />
           </form>
-        </div>
+        </h4>
+
         <hr />
-        <h4>Report thread (PUT /api/threads/:board)</h4>
-        <form class="myForm" id="reportThread">
-          <input
-            type="text"
-            placeholder="board"
-            id="board2"
-            name="board"
-            required=""
-          /><br />
-          <input
-            type="text"
-            placeholder="id to report"
-            name="thread_id"
-            required=""
-          /><br />
-          <input type="submit" value="Submit" />
-        </form>
+        <h4 class="main">
+          Report thread (PUT /api/threads/:board)
+          <form class="myForm background thread" id="reportThread">
+            <input
+              type="text"
+              placeholder="board"
+              id="board2"
+              name="board"
+              required=""
+            /><br />
+            <input
+              type="text"
+              placeholder="id to report"
+              name="thread_id"
+              required=""
+            /><br />
+            <input type="submit" value="Submit" />
+          </form>
+        </h4>
         <hr />
-        <h4>Delete thread (DELETE /api/threads/:board)</h4>
-        <form class="myForm" id="deleteThread">
-          <input
-            type="text"
-            placeholder="board"
-            id="board3"
-            name="board"
-            required=""
-          /><br />
-          <input
-            type="text"
-            placeholder="id to delete"
-            name="thread_id"
-            required=""
-          /><br />
-          <input
-            type="text"
-            placeholder="password"
-            name="delete_password"
-            required=""
-          /><br />
-          <input type="submit" value="Submit" />
-        </form>
+        <h4 class="main">
+          Delete thread (DELETE /api/threads/:board)
+          <form class="myForm background thread" id="deleteThread">
+            <input
+              type="text"
+              placeholder="board"
+              id="board3"
+              name="board"
+              required=""
+            /><br />
+            <input
+              type="text"
+              placeholder="id to delete"
+              name="thread_id"
+              required=""
+            /><br />
+            <input
+              type="text"
+              placeholder="password"
+              name="delete_password"
+              required=""
+            /><br />
+            <input type="submit" value="Submit" />
+          </form>
+        </h4>
         <hr />
 
-        <h4>New reply (POST /api/replies/:board)</h4>
-        <form
-          class="myForm"
-          action="/api/threads/test"
-          method="post"
-          id="newReply"
-        >
-          <input
-            type="text"
-            placeholder="board"
-            id="board4"
-            name="board"
-            required=""
-          /><br />
-          <input
-            type="text"
-            placeholder="thread id"
-            name="thread_id"
-            required=""
-          /><br />
-          <textarea
-            type="text"
-            placeholder="Thread text..."
-            name="text"
-            required=""
-          ></textarea
-          ><br />
-          <input
-            type="text"
-            placeholder="password to delete"
-            name="delete_password"
-            required=""
-          /><br />
-          <input type="submit" value="Submit" />
-        </form>
+        <h4 class="main">
+          New reply (POST /api/replies/:board)
+          <form
+            class="myForm background thread"
+            action="/api/threads/test"
+            method="post"
+            id="newReply"
+          >
+            <input
+              type="text"
+              placeholder="board"
+              id="board4"
+              name="board"
+              required=""
+            /><br />
+            <input
+              type="text"
+              placeholder="thread id"
+              name="thread_id"
+              required=""
+            /><br />
+            <textarea
+              type="text"
+              placeholder="Thread text..."
+              name="text"
+              required=""
+            ></textarea
+            ><br />
+            <input
+              type="text"
+              placeholder="password to delete"
+              name="delete_password"
+              required=""
+            /><br />
+            <input type="submit" value="Submit" />
+          </form>
+        </h4>
         <hr />
-        <h4>Report reply (PUT /api/replies/:board)</h4>
-        <form class="myForm" id="reportReply">
-          <input
-            type="text"
-            placeholder="board"
-            id="board5"
-            name="board"
-            required=""
-          /><br />
-          <input
-            type="text"
-            placeholder="thread id"
-            name="thread_id"
-            required=""
-          /><br />
-          <input
-            type="text"
-            placeholder="id to report"
-            name="reply_id"
-            required=""
-          /><br />
-          <input type="submit" value="Submit" />
-        </form>
+        <h4 class="main">
+          Report reply (PUT /api/replies/:board)
+          <form class="myForm background thread" id="reportReply">
+            <input
+              type="text"
+              placeholder="board"
+              id="board5"
+              name="board"
+              required=""
+            /><br />
+            <input
+              type="text"
+              placeholder="thread id"
+              name="thread_id"
+              required=""
+            /><br />
+            <input
+              type="text"
+              placeholder="id to report"
+              name="reply_id"
+              required=""
+            /><br />
+            <input type="submit" value="Submit" />
+          </form>
+        </h4>
         <hr />
-        <h4>Delete reply (DELETE /api/replies/:board)</h4>
-        <form class="myForm" id="deleteReply">
-          <input
-            type="text"
-            placeholder="board"
-            id="board6"
-            name="board"
-            required=""
-          /><br />
-          <input
-            type="text"
-            placeholder="thread id"
-            name="thread_id"
-            required=""
-          /><br />
-          <input
-            type="text"
-            placeholder="id to delete"
-            name="reply_id"
-            required=""
-          /><br />
-          <input
-            type="text"
-            placeholder="password"
-            name="delete_password"
-            required=""
-          /><br />
-          <input type="submit" value="Submit" />
-        </form>
+        <h4 class="main">
+          Delete reply (DELETE /api/replies/:board)
+          <form class="myForm background thread" id="deleteReply">
+            <input
+              type="text"
+              placeholder="board"
+              id="board6"
+              name="board"
+              required=""
+            /><br />
+            <input
+              type="text"
+              placeholder="thread id"
+              name="thread_id"
+              required=""
+            /><br />
+            <input
+              type="text"
+              placeholder="id to delete"
+              name="reply_id"
+              required=""
+            /><br />
+            <input
+              type="text"
+              placeholder="password"
+              name="delete_password"
+              required=""
+            /><br />
+            <input type="submit" value="Submit" />
+          </form>
+        </h4>
       </div>
     </center>
 
