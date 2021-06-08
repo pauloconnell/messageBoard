@@ -16,6 +16,8 @@
   </head>
   <body>
     <center>
+      <span id="boardLinks"></span>
+      <br /><br />
       <header>
         <h1>
           Welcome to the Message Board
@@ -34,7 +36,7 @@
       <hr style="margin: 50px" />
       <br />
       <h3>
-        Current boards:
+        Current boards - Use any of these or make your own:
       </h3>
       <br />
       <span class="thread" id="boardNames"></span>
@@ -368,8 +370,17 @@
       async function getAllBoards() {
         const response = await fetch("/api/allBoards/");
         const data = await response.json();
-
-        document.getElementById("boardNames").textContent = JSON.stringify(data);
+        //api/allBoards formats data so only one board name is returned
+        document.getElementById("boardNames").textContent = JSON.stringify(
+          data
+        );
+        let links = [];
+        links.push("<div>");
+        data.map(doc => {
+          links.push("<a href={doc.board}>{doc.board}</a>");
+        });
+        links.push("</div>");
+        document.getElementById("boardLinks").textContext = links.join("");
       }
       getAllBoards();
     </script>
