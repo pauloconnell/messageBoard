@@ -16,7 +16,7 @@
   </head>
   <body>
     <center>
-      <span id="boardLinks"></span>
+      <span class="thread" id="boardLinks"></span>
       <br /><br />
       <header>
         <h1>
@@ -374,13 +374,16 @@
         document.getElementById("boardNames").textContent = JSON.stringify(
           data
         );
-        let links = [];
-        links.push("<div>");
-        data.map(doc => {
-          links.push("<a href={doc.board}>{doc.board}</a>");
-        });
-        links.push("</div>");
-        document.getElementById("boardLinks").textContext = links.join("");
+        //let links = [];
+        //links.push("<div>Links to existing boards:<br>");
+        //let namedBoards=document.getElementById("boardNames").value;
+        //namedBoards.map(doc => {
+        //  links.push(
+        //    "<a href='/b/:"{doc}">{doc}</a>"
+        //  );
+        //});
+        //links.push("</div>");
+        //document.getElementById("boardLinks").textContext = links.join("");
       }
       getAllBoards();
     </script>

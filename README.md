@@ -112,7 +112,10 @@ URL Querry=>  /api/replies/:board/?_id=xxx   ALL replies are sent back in JSON
   on index page, show a list of links to each 'board'
     -create function to access db, and create a list of unique board names with a link to that 'board'
     -create component to house this list and include it on the index page and in Thread.html so it's easily accessable
+**DONE** :)
 
+-Milestone 5 -   Create links to boards displayed in Milestone 4
+  - wrap each board name in button which links to actual board
 
 
 ```

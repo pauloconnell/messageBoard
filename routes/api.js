@@ -333,10 +333,10 @@ module.exports = function(app) {
         if (data) {
           console.log("got data, about to send ", typeof data, data.length); // findBoard trims data to max 10 items
           data.forEach((doc, index) => {
-            doc.replies.sort(doc.replies.created_on);
+            doc.replies.sort(doc.replies.created_on);  // format the data 
             delete data.reported;
             delete data.delete_password;
-            if (doc.replies.length >= 3) doc.replies.slice(2);
+            if (doc.replies.length >= 3) doc.replies.slice(2);  // ensure only last 3 replies are shown
           });
           console.log("now data is max 10 items, with max 3 replies");
 
@@ -523,7 +523,8 @@ module.exports = function(app) {
       } else return null, "impossible, but no DOC found";
     });
   });
-
+  
+// This route was built to get the names of all boards to be displayed on the homepage by script in index.html 
   app.route("/api/allBoards/").get(async (req, res) => {
     //let { _id, board } = req.params;
     console.log("inside api/allBoards");
