@@ -8,7 +8,7 @@ body {
   background: url(
       https://res.cloudinary.com/pollie/image/upload/v1606772272/AlpineWB_bzkw1l.jpg
     )no-repeat;
-  background-size: 100%;
+  background-size: cover;
   background-attachment: fixed;
 }
 
